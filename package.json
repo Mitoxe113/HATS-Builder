@@ -1,0 +1,48 @@
+{
+  "name": "hats-builder",
+  "productName": "HATS Builder",
+  "version": "1.0.0",
+  "description": "Nintendo Switch CFW-Pack-Builder – offizielle Releases direkt von den Entwicklern, fertig für die SD-Karte",
+  "main": "main/main.js",
+  "author": "Marco",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win"
+  },
+  "dependencies": {
+    "adm-zip": "^0.5.16"
+  },
+  "devDependencies": {
+    "electron": "^37.0.0",
+    "electron-builder": "^26.0.0"
+  },
+  "build": {
+    "appId": "de.marco.hats-builder",
+    "productName": "HATS Builder",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main/**/*",
+      "renderer/**/*",
+      "package.json"
+    ],
+    "win": {
+      "icon": "build/icon.ico",
+      "target": [
+        { "target": "portable" },
+        { "target": "nsis" }
+      ]
+    },
+    "portable": {
+      "artifactName": "HATS Builder.exe"
+    },
+    "nsis": {
+      "artifactName": "HATS Builder Setup.exe",
+      "oneClick": true,
+      "perMachine": false,
+      "deleteAppDataOnUninstall": false
+    }
+  }
+}
