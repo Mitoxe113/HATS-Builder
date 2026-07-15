@@ -11,7 +11,7 @@ Windows-App zum Erstellen eines kompletten Nintendo-Switch-CFW-Packs für die SD
    abgefragt, gruppiert in fünf Kategorien:
    - **Basis:** Atmosphère, Hekate + Nyx
    - **Homebrew-Apps:** Homebrew App Store, JKSV, ftpd, NX-Shell, EdiZon, Goldleaf,
-     DBI (English), Sphaira, CyberFoil, Switch 90DNS Tester
+     DBI (English), Sphaira, CyberFoil, Switch 90DNS Tester, Battery Desync Fix
    - **System-Module:** nx-ovlloader, sys-clk (Basis), sys-patch, emuiibo, SaltyNX, MissionControl
    - **Tesla-Overlays:** Ultrahand, EdiZon Overlay, FPSLocker, QuickNTP,
      Status Monitor Deux, Sysmodules Overlay, sys-clk Overlay
@@ -35,6 +35,11 @@ Windows-App zum Erstellen eines kompletten Nintendo-Switch-CFW-Packs für die SD
 3. **Erstellen & SD** – Lädt die neuesten offiziellen Versionen, baut den fertigen
    SD-Ordner und kopiert ihn auf Wunsch direkt auf die SD-Karte (Merge – Saves,
    Nintendo-Ordner und emuMMC bleiben unberührt).
+
+**Sprache & Einstellungen:** Über den Button unten links öffnet sich ein
+Einstellungen-Fenster. Die komplette Oberfläche (inkl. Komponenten-Beschreibungen
+und Fehlermeldungen) ist auf **Deutsch und Englisch** umschaltbar; die Auswahl
+wird gespeichert.
 
 ## Starten
 

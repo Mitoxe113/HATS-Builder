@@ -13,6 +13,7 @@
 //   requires    – IDs anderer Komponenten, die mit aktiviert werden müssen
 //   conflicts   – IDs, die dieselbe Datei ersetzen (nur Warnung, kein Zwang)
 //   tag         – optionales Label (z. B. 'sigpatch', 'thirdparty')
+//   description – { de, en } zweisprachig
 //   assets      – Regeln, welche Release-Dateien wohin kommen:
 //       match       – RegExp auf den Asset-Namen
 //       action      – 'extract' (ZIP entpacken) oder 'copy' (Datei kopieren)
@@ -28,7 +29,10 @@ const COMPONENTS = [
     category: 'core',
     required: true,
     defaultOn: true,
-    description: 'Die Custom Firmware selbst – inklusive Homebrew Loader und Homebrew-Menü.',
+    description: {
+      de: 'Die Custom Firmware selbst – inklusive Homebrew Loader und Homebrew-Menü.',
+      en: 'The custom firmware itself – including the Homebrew Loader and Homebrew menu.',
+    },
     assets: [
       { match: /^atmosphere-.*\.zip$/, action: 'extract', target: '' },
       { match: /^fusee\.bin$/, action: 'copy', target: 'bootloader/payloads/fusee.bin' },
@@ -41,7 +45,10 @@ const COMPONENTS = [
     category: 'core',
     required: true,
     defaultOn: true,
-    description: 'Bootloader mit grafischem Boot-Menü (Nyx), NAND-Backups und emuMMC-Verwaltung.',
+    description: {
+      de: 'Bootloader mit grafischem Boot-Menü (Nyx), NAND-Backups und emuMMC-Verwaltung.',
+      en: 'Bootloader with a graphical boot menu (Nyx), NAND backups and emuMMC management.',
+    },
     assets: [
       { match: /^hekate_ctcaer_[\d.]+_Nyx_[\d.]+\.zip$/, action: 'extract', target: '' },
       { match: /^hekate_ctcaer_[\d.]+\.bin$/, action: 'copy', target: 'payload.bin' },
@@ -57,7 +64,10 @@ const COMPONENTS = [
     repo: 'fortheusers/hb-appstore',
     category: 'apps',
     defaultOn: true,
-    description: 'Homebrew-Apps direkt auf der Switch durchsuchen, installieren und aktualisieren.',
+    description: {
+      de: 'Homebrew-Apps direkt auf der Switch durchsuchen, installieren und aktualisieren.',
+      en: 'Browse, install and update homebrew apps directly on the Switch.',
+    },
     assets: [{ match: /^appstore\.nro$/, action: 'copy', target: 'switch/appstore/appstore.nro' }],
   },
   {
@@ -66,7 +76,10 @@ const COMPONENTS = [
     repo: 'J-D-K/JKSV',
     category: 'apps',
     defaultOn: true,
-    description: 'Spielstände sichern und wiederherstellen – das Standard-Tool für Save-Backups.',
+    description: {
+      de: 'Spielstände sichern und wiederherstellen – das Standard-Tool für Save-Backups.',
+      en: 'Back up and restore save data – the standard tool for save backups.',
+    },
     assets: [{ match: /^JKSV\.nro$/, action: 'copy', target: 'switch/JKSV.nro' }],
   },
   {
@@ -74,7 +87,10 @@ const COMPONENTS = [
     name: 'ftpd',
     repo: 'mtheall/ftpd',
     category: 'apps',
-    description: 'FTP-Server auf der Switch – Dateien kabellos vom PC auf die SD-Karte übertragen.',
+    description: {
+      de: 'FTP-Server auf der Switch – Dateien kabellos vom PC auf die SD-Karte übertragen.',
+      en: 'FTP server on the Switch – transfer files wirelessly from your PC to the SD card.',
+    },
     assets: [{ match: /^ftpd\.nro$/, action: 'copy', target: 'switch/ftpd.nro' }],
   },
   {
@@ -82,7 +98,10 @@ const COMPONENTS = [
     name: 'NX-Shell',
     repo: 'joel16/NX-Shell',
     category: 'apps',
-    description: 'Dateimanager für die Switch – Dateien direkt auf der Konsole verwalten.',
+    description: {
+      de: 'Dateimanager für die Switch – Dateien direkt auf der Konsole verwalten.',
+      en: 'File manager for the Switch – manage files directly on the console.',
+    },
     assets: [{ match: /^NX-Shell\.nro$/, action: 'copy', target: 'switch/NX-Shell.nro' }],
   },
   {
@@ -90,7 +109,10 @@ const COMPONENTS = [
     name: 'EdiZon',
     repo: 'WerWolv/EdiZon',
     category: 'apps',
-    description: 'Spielstand-Editor und Backup-Tool (App). Das passende Overlay ist separat wählbar.',
+    description: {
+      de: 'Spielstand-Editor und Backup-Tool (App). Das passende Overlay ist separat wählbar.',
+      en: 'Save editor and backup tool (app). The matching overlay is selectable separately.',
+    },
     assets: [{ match: /^EdiZon\.nro$/, action: 'copy', target: 'switch/EdiZon.nro' }],
   },
   {
@@ -98,7 +120,10 @@ const COMPONENTS = [
     name: 'Goldleaf',
     repo: 'XorTroll/Goldleaf',
     category: 'apps',
-    description: 'Titel- und Dateimanager: NSPs installieren, Saves verwalten, USB-Übertragung (Quark).',
+    description: {
+      de: 'Titel- und Dateimanager: NSPs installieren, Saves verwalten, USB-Übertragung (Quark).',
+      en: 'Title and file manager: install NSPs, manage saves, USB transfer (Quark).',
+    },
     assets: [{ match: /^Goldleaf\.nro$/, action: 'copy', target: 'switch/Goldleaf.nro' }],
   },
   {
@@ -106,7 +131,10 @@ const COMPONENTS = [
     name: 'DBI (English)',
     repo: 'rashevskyv/DBIPatcher',
     category: 'apps',
-    description: 'Titel-/Save-Manager und Installer – englisch gepatchte Version von DBI.',
+    description: {
+      de: 'Titel-/Save-Manager und Installer – englisch gepatchte Version von DBI.',
+      en: 'Title/save manager and installer – English-patched version of DBI.',
+    },
     assets: [{ match: /^DBI\.nro$/, action: 'copy', target: 'switch/DBI.nro' }],
   },
   {
@@ -114,7 +142,10 @@ const COMPONENTS = [
     name: 'Sphaira',
     repo: 'ITotalJustice/sphaira',
     category: 'apps',
-    description: 'Moderner Homebrew-Menü-Ersatz mit integriertem App-Store und Dateibrowser.',
+    description: {
+      de: 'Moderner Homebrew-Menü-Ersatz mit integriertem App-Store und Dateibrowser.',
+      en: 'Modern homebrew menu replacement with a built-in app store and file browser.',
+    },
     assets: [{ match: /^sphaira\.zip$/, action: 'extract', target: '' }],
   },
   {
@@ -122,7 +153,10 @@ const COMPONENTS = [
     name: 'CyberFoil',
     repo: 'luketanti/CyberFoil',
     category: 'apps',
-    description: 'Homebrew-Titel-Installer von luketanti (wird nach switch/CyberFoil/ installiert).',
+    description: {
+      de: 'Homebrew-Titel-Installer von luketanti (wird nach switch/CyberFoil/ installiert).',
+      en: 'Homebrew title installer by luketanti (installed to switch/CyberFoil/).',
+    },
     assets: [{ match: /^cyberfoil\.zip$/, action: 'extract', target: '' }],
   },
   {
@@ -130,8 +164,22 @@ const COMPONENTS = [
     name: 'Switch 90DNS Tester',
     repo: 'meganukebmp/Switch_90DNS_tester',
     category: 'apps',
-    description: 'Prüft, ob 90DNS die Verbindung zu Nintendos Servern zuverlässig blockiert.',
+    description: {
+      de: 'Prüft, ob 90DNS die Verbindung zu Nintendos Servern zuverlässig blockiert.',
+      en: "Checks whether 90DNS reliably blocks the connection to Nintendo's servers.",
+    },
     assets: [{ match: /^Switch_90DNS_tester\.nro$/, action: 'copy', target: 'switch/Switch_90DNS_tester.nro' }],
+  },
+  {
+    id: 'batterydesync',
+    name: 'Battery Desync Fix',
+    repo: 'CTCaer/battery_desync_fix_nx',
+    category: 'apps',
+    description: {
+      de: 'Behebt eine falsch angezeigte Akkuladung nach Wechseln zwischen CFW/OFW (einmalig ausführen).',
+      en: 'Fixes a mismatched battery percentage after switching between CFW/OFW (run once).',
+    },
+    assets: [{ match: /^battery_desync_fix_v[\d.]+\.nro$/, action: 'copy', target: 'switch/battery_desync_fix.nro' }],
   },
 
   // ── System-Module ────────────────────────────────────────────────────────
@@ -140,7 +188,10 @@ const COMPONENTS = [
     name: 'nx-ovlloader',
     repo: 'WerWolv/nx-ovlloader',
     category: 'sysmodules',
-    description: 'Basis für alle Tesla-Overlays – wird von jedem Overlay benötigt.',
+    description: {
+      de: 'Basis für alle Tesla-Overlays – wird von jedem Overlay benötigt.',
+      en: 'Base for all Tesla overlays – required by every overlay.',
+    },
     assets: [{ match: /^nx-ovlloader\.zip$/, action: 'extract', target: '' }],
   },
   {
@@ -149,7 +200,10 @@ const COMPONENTS = [
     repo: 'retronx-team/sys-clk',
     category: 'sysmodules',
     requires: ['ovlloader'],
-    description: 'System-Modul für CPU/GPU/RAM-Übertaktung pro Spiel (offizielle Basis-Version).',
+    description: {
+      de: 'System-Modul für CPU/GPU/RAM-Übertaktung pro Spiel (offizielle Basis-Version).',
+      en: 'System module for per-game CPU/GPU/RAM overclocking (official base version).',
+    },
     assets: [{ match: /^sys-clk-.*\.zip$/, action: 'extract', target: '' }],
   },
   {
@@ -158,7 +212,10 @@ const COMPONENTS = [
     repo: 'borntohonk/sys-patch',
     category: 'sysmodules',
     tag: 'sigpatch',
-    description: 'Patcht Signaturprüfungen zur Laufzeit (Ersatz für statische Sigpatches).',
+    description: {
+      de: 'Patcht Signaturprüfungen zur Laufzeit (Ersatz für statische Sigpatches).',
+      en: 'Patches signature checks at runtime (replacement for static sigpatches).',
+    },
     assets: [{ match: /^sys-patch-.*\.zip$/, action: 'extract', target: '' }],
   },
   {
@@ -167,7 +224,10 @@ const COMPONENTS = [
     repo: 'XorTroll/emuiibo',
     category: 'sysmodules',
     requires: ['ovlloader'],
-    description: 'Amiibo-Emulation – virtuelle Amiibos erstellen und nutzen (inkl. Overlay).',
+    description: {
+      de: 'Amiibo-Emulation – virtuelle Amiibos erstellen und nutzen (inkl. Overlay).',
+      en: 'Amiibo emulation – create and use virtual amiibos (incl. overlay).',
+    },
     assets: [{ match: /^emuiibo\.zip$/, action: 'extract', target: '', stripPrefix: 'SdOut/' }],
   },
   {
@@ -175,7 +235,10 @@ const COMPONENTS = [
     name: 'SaltyNX',
     repo: 'masagrator/SaltyNX',
     category: 'sysmodules',
-    description: 'Plugin-Loader für Spiele (Basis u. a. für FPSLocker/NX-FPS).',
+    description: {
+      de: 'Plugin-Loader für Spiele (Basis u. a. für FPSLocker/NX-FPS).',
+      en: 'Plugin loader for games (base for e.g. FPSLocker/NX-FPS).',
+    },
     assets: [{ match: /^SaltyNX\.zip$/, action: 'extract', target: '' }],
   },
   {
@@ -183,7 +246,10 @@ const COMPONENTS = [
     name: 'MissionControl',
     repo: 'ndeadly/MissionControl',
     category: 'sysmodules',
-    description: 'Controller anderer Konsolen (PS4/PS5, Xbox, Wii U …) per Bluetooth nutzen.',
+    description: {
+      de: 'Controller anderer Konsolen (PS4/PS5, Xbox, Wii U …) per Bluetooth nutzen.',
+      en: 'Use controllers from other consoles (PS4/PS5, Xbox, Wii U …) via Bluetooth.',
+    },
     assets: [{ match: /^MissionControl-.*\.zip$/, action: 'extract', target: '' }],
   },
 
@@ -194,7 +260,10 @@ const COMPONENTS = [
     repo: 'ppkantorski/Ultrahand-Overlay',
     category: 'overlays',
     requires: ['ovlloader'],
-    description: 'Overlay-Menü (L + Steuerkreuz runter + rechter Stick drücken) mit vielen Zusatzfunktionen.',
+    description: {
+      de: 'Overlay-Menü (L + Steuerkreuz runter + rechter Stick drücken) mit vielen Zusatzfunktionen.',
+      en: 'Overlay menu (L + D-pad down + press the right stick) with many extra features.',
+    },
     assets: [{ match: /^sdout\.zip$/, action: 'extract', target: '' }],
   },
   {
@@ -203,7 +272,10 @@ const COMPONENTS = [
     repo: 'proferabg/EdiZon-Overlay',
     category: 'overlays',
     requires: ['ovlloader'],
-    description: 'Aktiv gepflegtes EdiZon-Overlay: Cheats im Spiel ein-/ausschalten.',
+    description: {
+      de: 'Aktiv gepflegtes EdiZon-Overlay: Cheats im Spiel ein-/ausschalten.',
+      en: 'Actively maintained EdiZon overlay: toggle cheats in-game.',
+    },
     assets: [{ match: /^ovlEdiZon\.ovl$/, action: 'copy', target: 'switch/.overlays/ovlEdiZon.ovl' }],
   },
   {
@@ -212,7 +284,10 @@ const COMPONENTS = [
     repo: 'masagrator/FPSLocker',
     category: 'overlays',
     requires: ['ovlloader', 'saltynx'],
-    description: 'FPS in Spielen begrenzen/entsperren (benötigt SaltyNX).',
+    description: {
+      de: 'FPS in Spielen begrenzen/entsperren (benötigt SaltyNX).',
+      en: 'Limit/unlock FPS in games (requires SaltyNX).',
+    },
     assets: [{ match: /^FPSLocker\.ovl$/, action: 'copy', target: 'switch/.overlays/FPSLocker.ovl' }],
   },
   {
@@ -221,7 +296,10 @@ const COMPONENTS = [
     repo: 'nedex/QuickNTP',
     category: 'overlays',
     requires: ['ovlloader'],
-    description: 'Uhrzeit der Switch schnell per NTP synchronisieren (z. B. für 90DNS/Online).',
+    description: {
+      de: 'Uhrzeit der Switch schnell per NTP synchronisieren (z. B. für 90DNS/Online).',
+      en: 'Quickly sync the Switch clock via NTP (e.g. for 90DNS/online).',
+    },
     assets: [{ match: /^sdout\.zip$/, action: 'extract', target: '' }],
   },
   {
@@ -230,7 +308,10 @@ const COMPONENTS = [
     repo: 'masagrator/Status-Monitor-Deux',
     category: 'overlays',
     requires: ['ovlloader'],
-    description: 'FPS, Temperaturen, Auslastung und Taktraten live im Spiel anzeigen.',
+    description: {
+      de: 'FPS, Temperaturen, Auslastung und Taktraten live im Spiel anzeigen.',
+      en: 'Show FPS, temperatures, load and clock speeds live in-game.',
+    },
     assets: [{ match: /^Status-Monitor-Deux\.zip$/, action: 'extract', target: '' }],
   },
   {
@@ -239,7 +320,10 @@ const COMPONENTS = [
     repo: 'ppkantorski/ovl-sysmodules',
     category: 'overlays',
     requires: ['ovlloader'],
-    description: 'System-Module direkt im Overlay ein- und ausschalten.',
+    description: {
+      de: 'System-Module direkt im Overlay ein- und ausschalten.',
+      en: 'Toggle system modules directly from the overlay.',
+    },
     assets: [{ match: /^ovlSysmodules\.ovl$/, action: 'copy', target: 'switch/.overlays/ovlSysmodules.ovl' }],
   },
   {
@@ -248,7 +332,10 @@ const COMPONENTS = [
     repo: 'ppkantorski/sys-clk',
     category: 'overlays',
     requires: ['ovlloader', 'sysclk'],
-    description: 'Erweitertes Übertaktungs-Overlay (ersetzt das Overlay der sys-clk-Basis).',
+    description: {
+      de: 'Erweitertes Übertaktungs-Overlay (ersetzt das Overlay der sys-clk-Basis).',
+      en: 'Enhanced overclocking overlay (replaces the sys-clk base overlay).',
+    },
     // Gleicher Dateiname wie das Overlay aus der sys-clk-Basis, damit es dieses
     // wirklich ERSETZT (sonst lägen zwei sys-clk-Overlays im Tesla-Menü)
     assets: [{ match: /^sys-clk-overlay\.ovl$/, action: 'copy', target: 'switch/.overlays/sys-clk-overlay.ovl' }],
@@ -260,7 +347,10 @@ const COMPONENTS = [
     name: 'Lockpick_RCM',
     repo: 'saneki/Lockpick_RCM',
     category: 'tools',
-    description: 'RCM-Payload zum Auslesen der eigenen Konsolen-Schlüssel (über Hekate → Payloads).',
+    description: {
+      de: 'RCM-Payload zum Auslesen der eigenen Konsolen-Schlüssel (über Hekate → Payloads).',
+      en: 'RCM payload to dump your own console keys (via Hekate → Payloads).',
+    },
     assets: [{ match: /^Lockpick_RCM\.bin$/, action: 'copy', target: 'bootloader/payloads/Lockpick_RCM.bin' }],
   },
   {
@@ -269,7 +359,10 @@ const COMPONENTS = [
     repo: 'sthetix/HATS-Tools',
     category: 'tools',
     tag: 'thirdparty',
-    description: 'Konfigurations- und Wartungstools von sthetix (Drittanbieter-Pack).',
+    description: {
+      de: 'Konfigurations- und Wartungstools von sthetix (Drittanbieter-Pack).',
+      en: 'Configuration and maintenance tools by sthetix (third-party pack).',
+    },
     assets: [{ match: /^hats-tools-.*\.zip$/, action: 'extract', target: '' }],
   },
   {
@@ -279,7 +372,10 @@ const COMPONENTS = [
     source: 'branch',
     branch: 'master',
     category: 'tools',
-    description: 'Layout-Patches (Quelldateien) von exelix11 für Custom-Themes – landen unter /themes.',
+    description: {
+      de: 'Layout-Patches (Quelldateien) von exelix11 für Custom-Themes – landen unter /themes.',
+      en: 'Layout patches (source files) by exelix11 for custom themes – placed under /themes.',
+    },
     assets: [
       { match: /\.zip$/, action: 'extract', target: 'themes', stripPrefix: 'theme-patches-master/' },
     ],
@@ -287,11 +383,34 @@ const COMPONENTS = [
 ];
 
 const CATEGORIES = [
-  { id: 'core', name: 'Basis', hint: 'Pflicht – ohne diese beiden läuft nichts' },
-  { id: 'apps', name: 'Homebrew-Apps', hint: 'Apps für das Homebrew-Menü' },
-  { id: 'sysmodules', name: 'System-Module', hint: 'Laufen im Hintergrund' },
-  { id: 'overlays', name: 'Tesla-Overlays', hint: 'Im Spiel aufrufbar – brauchen nx-ovlloader und ein Overlay-Menü' },
-  { id: 'tools', name: 'Tools & Extras', hint: 'Payloads und Zusatzwerkzeuge' },
+  {
+    id: 'core',
+    name: { de: 'Basis', en: 'Base' },
+    hint: { de: 'Pflicht – ohne diese beiden läuft nichts', en: 'Required – nothing works without these two' },
+  },
+  {
+    id: 'apps',
+    name: { de: 'Homebrew-Apps', en: 'Homebrew Apps' },
+    hint: { de: 'Apps für das Homebrew-Menü', en: 'Apps for the homebrew menu' },
+  },
+  {
+    id: 'sysmodules',
+    name: { de: 'System-Module', en: 'System Modules' },
+    hint: { de: 'Laufen im Hintergrund', en: 'Run in the background' },
+  },
+  {
+    id: 'overlays',
+    name: { de: 'Tesla-Overlays', en: 'Tesla Overlays' },
+    hint: {
+      de: 'Im Spiel aufrufbar – brauchen nx-ovlloader und ein Overlay-Menü',
+      en: 'Accessible in-game – require nx-ovlloader and an overlay menu',
+    },
+  },
+  {
+    id: 'tools',
+    name: { de: 'Tools & Extras', en: 'Tools & Extras' },
+    hint: { de: 'Payloads und Zusatzwerkzeuge', en: 'Payloads and extra tools' },
+  },
 ];
 
 module.exports = { COMPONENTS, CATEGORIES };

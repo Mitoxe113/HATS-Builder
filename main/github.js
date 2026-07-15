@@ -2,6 +2,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const { mt, getLang } = require('./messages');
 
 // Holt das jeweils neueste offizielle Release eines Repos über die GitHub-API.
 //
@@ -82,23 +83,25 @@ function flush() {
 
 function checkStatus(res) {
   if (res.status === 401) {
-    throw new Error('GitHub-Token ungültig – bitte im Token-Feld prüfen oder leeren.');
+    throw new Error(mt('err.tokenInvalid'));
   }
   if (res.status === 403 || res.status === 429) {
     if (res.headers.get('x-ratelimit-remaining') === '0') {
       const reset = Number(res.headers.get('x-ratelimit-reset'));
       const time = reset
-        ? new Date(reset * 1000).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })
+        ? new Date(reset * 1000).toLocaleTimeString(getLang() === 'en' ? 'en-GB' : 'de-DE', {
+            hour: '2-digit',
+            minute: '2-digit',
+          })
         : null;
-      throw new Error(
-        `GitHub-Rate-Limit erreicht${time ? ` – Reset um ${time} Uhr` : ''}. ` +
-          'Tipp: kostenloses GitHub-Token hinterlegen (5.000 statt 60 Abfragen/Stunde).'
-      );
+      const err = new Error(mt('err.rateLimit', time ? mt('err.resetAt', time) : ''));
+      err.rateLimited = true; // sprachunabhängiges Flag für den Renderer
+      throw err;
     }
-    throw new Error('GitHub hat die Anfrage abgelehnt (403).');
+    throw new Error(mt('err.rejected403'));
   }
   if (!res.ok) {
-    throw new Error(`GitHub antwortete mit Status ${res.status}`);
+    throw new Error(mt('err.httpStatus', res.status));
   }
 }
 
@@ -138,9 +141,15 @@ async function cached(key, force, fetcher) {
   } catch (err) {
     if (entry) {
       // Offline oder Rate-Limit: alter Stand ist besser als gar keiner
-      return { ...entry.data, stale: true, fromCache: true, staleReason: err.message };
+      return {
+        ...entry.data,
+        stale: true,
+        fromCache: true,
+        staleReason: err.message,
+        staleRateLimited: !!err.rateLimited,
+      };
     }
-    throw new Error(err.message);
+    throw err;
   }
 }
 

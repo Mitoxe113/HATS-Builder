@@ -23,6 +23,10 @@ async function waitForReady(win) {
 }
 
 async function takeScreenshots(win, shotDir) {
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  const shot = async (name) => fs.writeFileSync(path.join(shotDir, name), (await win.webContents.capturePage()).toPNG());
+  const click = (sel) => win.webContents.executeJavaScript(`document.querySelector('${sel}').click(); true`);
+
   for (const view of ['components', 'hekate', 'build']) {
     await win.webContents.executeJavaScript(
       `document.querySelector('.nav-item[data-view="${view}"]').click();` +
@@ -51,6 +55,23 @@ async function takeScreenshots(win, shotDir) {
       }
     }
   }
+
+  // Einstellungen-Fenster + englische Ansicht
+  await click('.nav-item[data-view="components"]');
+  await win.webContents.executeJavaScript('document.querySelector(".main").scrollTop = 0; true');
+  await sleep(300);
+  await click('#btn-settings');
+  await sleep(400);
+  await shot('settings-modal.png');
+  await click('.lang-opt[data-lang="en"]');
+  await sleep(400);
+  await shot('settings-modal-en.png');
+  await click('#btn-settings-close');
+  await sleep(400);
+  await shot('view-components-en.png');
+  await click('.nav-item[data-view="hekate"]');
+  await sleep(400);
+  await shot('view-hekate-en.png');
 }
 
 // Klickt Komponenten-Toggles im echten UI und prüft, ob Abhängigkeiten

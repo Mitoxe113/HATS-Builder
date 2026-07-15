@@ -21,31 +21,31 @@
         <img class="logo-mark" src="icon.png" alt="" />
         <div>
           <div class="logo-title">HATS Builder</div>
-          <div class="logo-sub">Switch CFW-Pack</div>
+          <div class="logo-sub" data-i18n="logoSub">Switch CFW-Pack</div>
         </div>
       </div>
 
       <nav class="nav">
         <button class="nav-item active" data-view="components">
           <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
-          <span>Komponenten</span>
+          <span data-i18n="nav.components">Komponenten</span>
           <span class="nav-badge" id="nav-badge-components"></span>
         </button>
         <button class="nav-item" data-view="hekate">
           <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
-          <span>Hekate-Config</span>
+          <span data-i18n="nav.hekate">Hekate-Config</span>
         </button>
         <button class="nav-item" data-view="build">
           <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3h9l4 4v12a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M9 3v5h7"/><circle cx="12" cy="15" r="2.6"/></svg>
-          <span>Erstellen &amp; SD</span>
+          <span data-i18n="nav.build">Erstellen &amp; SD</span>
         </button>
       </nav>
 
       <div class="sidebar-footer">
-        <div class="source-note">
-          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
-          <span>Nur offizielle Releases,<br/>direkt von den Entwicklern</span>
-        </div>
+        <button class="settings-btn" id="btn-settings">
+          <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          <span data-i18n="settings.button">Einstellungen</span>
+        </button>
         <div class="version" id="app-version"></div>
       </div>
     </aside>
@@ -57,24 +57,24 @@
       <section class="view active" id="view-components">
         <header class="view-header">
           <div>
-            <h1>Komponenten</h1>
-            <p class="subtitle">Wähle aus, was in dein SD-Pack kommt – Versionen kommen immer direkt von GitHub.</p>
+            <h1 data-i18n="comp.title">Komponenten</h1>
+            <p class="subtitle" data-i18n="comp.subtitle">Wähle aus, was in dein SD-Pack kommt – Versionen kommen immer direkt von GitHub.</p>
           </div>
           <button class="btn btn-secondary" id="btn-check-updates">
             <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>
-            Updates prüfen
+            <span data-i18n="comp.checkUpdates">Updates prüfen</span>
           </button>
         </header>
         <div class="release-status" id="release-status"></div>
         <div id="component-sections"></div>
 
         <div class="card">
-          <h2 class="card-title">GitHub-Token <span class="mono-badge">optional</span></h2>
-          <p class="card-hint">GitHub erlaubt ohne Anmeldung nur 60 Versions-Abfragen pro Stunde – danach erscheint „Rate-Limit erreicht“. Mit einem kostenlosen Token (keine Berechtigungen nötig) sind es 5.000. Der Token wird nur lokal auf diesem PC gespeichert.</p>
+          <h2 class="card-title"><span data-i18n="token.title">GitHub-Token</span> <span class="mono-badge" data-i18n="token.optional">optional</span></h2>
+          <p class="card-hint" data-i18n="token.hint">GitHub erlaubt ohne Anmeldung nur 60 Versions-Abfragen pro Stunde – danach erscheint „Rate-Limit erreicht“. Mit einem kostenlosen Token (keine Berechtigungen nötig) sind es 5.000. Der Token wird nur lokal auf diesem PC gespeichert.</p>
           <div class="token-row">
-            <input type="password" id="github-token" placeholder="ghp_… oder github_pat_…" spellcheck="false" autocomplete="off" />
-            <button class="btn btn-secondary" id="btn-save-token">Speichern</button>
-            <button class="btn btn-ghost" id="btn-token-help">Token erstellen</button>
+            <input type="password" id="github-token" data-i18n-ph="token.placeholder" placeholder="ghp_… oder github_pat_…" spellcheck="false" autocomplete="off" />
+            <button class="btn btn-secondary" id="btn-save-token" data-i18n="token.save">Speichern</button>
+            <button class="btn btn-ghost" id="btn-token-help" data-i18n="token.create">Token erstellen</button>
           </div>
         </div>
       </section>
@@ -83,28 +83,28 @@
       <section class="view" id="view-hekate">
         <header class="view-header">
           <div>
-            <h1>Hekate Boot-Menü</h1>
-            <p class="subtitle">Diese Einstellungen landen als <code>bootloader/hekate_ipl.ini</code> in deinem Pack.</p>
+            <h1 data-i18n="hekate.title">Hekate Boot-Menü</h1>
+            <p class="subtitle" data-i18n-html="hekate.subtitleHtml">Diese Einstellungen landen als <code>bootloader/hekate_ipl.ini</code> in deinem Pack.</p>
           </div>
         </header>
 
         <div class="hekate-grid">
           <div class="hekate-col">
             <div class="card">
-              <h2 class="card-title">Boot-Einträge</h2>
-              <p class="card-hint">Diese Einträge erscheinen im Hekate-Boot-Menü. Namen sind frei wählbar.</p>
+              <h2 class="card-title" data-i18n="hekate.bootEntries">Boot-Einträge</h2>
+              <p class="card-hint" data-i18n="hekate.bootEntriesHint">Diese Einträge erscheinen im Hekate-Boot-Menü. Namen sind frei wählbar.</p>
               <div id="boot-entries"></div>
             </div>
 
             <div class="card">
-              <h2 class="card-title">Allgemein</h2>
+              <h2 class="card-title" data-i18n="hekate.general">Allgemein</h2>
               <div id="hekate-general"></div>
             </div>
           </div>
 
           <div class="hekate-col">
             <div class="card ini-card">
-              <h2 class="card-title">Live-Vorschau <span class="mono-badge">hekate_ipl.ini</span></h2>
+              <h2 class="card-title"><span data-i18n="hekate.preview">Live-Vorschau</span> <span class="mono-badge">hekate_ipl.ini</span></h2>
               <pre id="ini-preview" class="ini-preview"></pre>
             </div>
           </div>
@@ -115,31 +115,31 @@
       <section class="view" id="view-build">
         <header class="view-header">
           <div>
-            <h1>Pack erstellen</h1>
-            <p class="subtitle">Lädt die neuesten offiziellen Versionen und baut daraus einen fertigen SD-Karten-Ordner.</p>
+            <h1 data-i18n="build.title">Pack erstellen</h1>
+            <p class="subtitle" data-i18n="build.subtitle">Lädt die neuesten offiziellen Versionen und baut daraus einen fertigen SD-Karten-Ordner.</p>
           </div>
         </header>
 
         <div class="card">
           <div class="output-row">
             <div class="output-path">
-              <span class="output-label">Zielordner</span>
+              <span class="output-label" data-i18n="build.outputLabel">Zielordner</span>
               <span class="mono" id="output-dir"></span>
             </div>
             <div class="output-actions">
-              <button class="btn btn-ghost" id="btn-choose-output">Ändern</button>
-              <button class="btn btn-ghost" id="btn-open-output">Öffnen</button>
+              <button class="btn btn-ghost" id="btn-choose-output" data-i18n="build.change">Ändern</button>
+              <button class="btn btn-ghost" id="btn-open-output" data-i18n="build.open">Öffnen</button>
             </div>
           </div>
           <div class="build-summary" id="build-summary"></div>
           <button class="btn btn-primary btn-big" id="btn-build">
             <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v13"/><path d="M6 11l6 6 6-6"/><path d="M5 21h14"/></svg>
-            <span>Pack erstellen</span>
+            <span data-i18n="build.create">Pack erstellen</span>
           </button>
 
           <div class="progress-area" id="build-progress" hidden>
             <div class="progress-head">
-              <span id="progress-step-label">Vorbereitung …</span>
+              <span id="progress-step-label"></span>
               <span id="progress-step-count"></span>
             </div>
             <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
@@ -151,13 +151,13 @@
 
         <div class="card">
           <div class="card-title-row">
-            <h2 class="card-title">Auf SD-Karte kopieren</h2>
+            <h2 class="card-title" data-i18n="sd.title">Auf SD-Karte kopieren</h2>
             <button class="btn btn-ghost" id="btn-refresh-drives">
               <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>
-              Aktualisieren
+              <span data-i18n="sd.refresh">Aktualisieren</span>
             </button>
           </div>
-          <p class="card-hint">Der Inhalt des Pack-Ordners wird auf die Karte kopiert. Vorhandene Dateien werden überschrieben, deine Spielstände &amp; Saves bleiben unberührt.</p>
+          <p class="card-hint" data-i18n="sd.hint">Der Inhalt des Pack-Ordners wird auf die Karte kopiert. Vorhandene Dateien werden überschrieben, deine Spielstände &amp; Saves bleiben unberührt.</p>
           <div class="drive-list" id="drive-list"></div>
           <div class="progress-area" id="sd-progress" hidden>
             <div class="progress-head">
@@ -171,7 +171,32 @@
     </main>
   </div>
 
+  <!-- ── Einstellungen-Fenster ────────────────────────────────── -->
+  <div class="modal-overlay" id="settings-modal" hidden>
+    <div class="modal">
+      <div class="modal-head">
+        <h2 data-i18n="settings.title">Einstellungen</h2>
+        <button class="modal-close" id="btn-settings-close" aria-label="Close">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="setting-block">
+          <div class="setting-block-label" data-i18n="settings.language">Sprache</div>
+          <div class="lang-toggle" id="lang-toggle">
+            <button class="lang-opt" data-lang="de">Deutsch</button>
+            <button class="lang-opt" data-lang="en">English</button>
+          </div>
+        </div>
+        <div class="settings-info">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
+          <span data-i18n="settings.info">Nur offizielle Releases, direkt von den Entwicklern</span>
+        </div>
+        <div class="settings-version" id="settings-version"></div>
+      </div>
+    </div>
+  </div>
+
   <div class="toast-container" id="toasts"></div>
+  <script src="i18n.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

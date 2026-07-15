@@ -6,6 +6,7 @@ const AdmZip = require('adm-zip');
 const { COMPONENTS } = require('./components');
 const github = require('./github');
 const { generateIni } = require('./hekate');
+const { mt } = require('./messages');
 
 // Marker-Datei: kennzeichnet einen von uns erstellten Pack-Ordner.
 // Nur Ordner mit dieser Datei (oder leere Ordner) werden beim Neu-Bauen geleert.
@@ -39,7 +40,7 @@ async function downloadAsset(component, release, asset, emit) {
 
   const res = await fetch(asset.url, { headers: { 'User-Agent': 'HATS-Builder' } });
   if (!res.ok || !res.body) {
-    throw new Error(`Download von ${asset.name} fehlgeschlagen (HTTP ${res.status})`);
+    throw new Error(mt('err.downloadFailed', asset.name, res.status));
   }
 
   const total = Number(res.headers.get('content-length')) || asset.size || 0;
@@ -85,7 +86,7 @@ function safeJoin(base, ...parts) {
   const target = path.resolve(base, ...parts);
   const root = path.resolve(base);
   if (target !== root && !target.startsWith(root + path.sep)) {
-    throw new Error('Archiv enthält einen unzulässigen Pfad (Zip-Slip abgewehrt).');
+    throw new Error(mt('err.zipSlip'));
   }
   return target;
 }
@@ -112,7 +113,7 @@ function applyAsset(rule, filePath, outputDir) {
       written.push(path.relative(outputDir, outPath));
     }
     if (rule.stripPrefix && written.length === 0) {
-      throw new Error(`ZIP enthält den erwarteten Ordner "${rule.stripPrefix}" nicht.`);
+      throw new Error(mt('err.stripMissing', rule.stripPrefix));
     }
   } else {
     const target = safeJoin(outputDir, rule.target);
@@ -146,10 +147,7 @@ function preparePackDir(outputDir) {
     if (entries.length > 0) {
       const info = readPackInfo(outputDir);
       if (!info) {
-        throw new Error(
-          `Der Ordner "${outputDir}" ist nicht leer und wurde nicht vom HATS Builder erstellt. ` +
-            'Bitte einen leeren Ordner wählen, damit keine fremden Dateien gelöscht werden.'
-        );
+        throw new Error(mt('err.folderNotEmpty', outputDir));
       }
       if (Array.isArray(info.files)) {
         // Nur die von uns zuletzt geschriebenen Dateien entfernen – vom Nutzer
@@ -247,10 +245,7 @@ async function buildPack({ outputDir, selectedIds, hekateConfig }, emit) {
     for (const rule of comp.assets) {
       const asset = release.assets.find((a) => rule.match.test(a.name));
       if (!asset) {
-        throw new Error(
-          `${comp.name}: Kein passendes Release-Asset gefunden (erwartet: ${rule.match}). ` +
-            'Eventuell hat sich das Release-Format geändert.'
-        );
+        throw new Error(mt('err.noAsset', comp.name, String(rule.match)));
       }
       const filePath = await downloadAsset(comp, release, asset, emit);
       emit({

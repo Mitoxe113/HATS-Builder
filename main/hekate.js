@@ -24,7 +24,10 @@ const ENTRY_ORDER = ['cfw_emu', 'cfw_sys', 'semistock', 'stock'];
 
 const ENTRY_TEMPLATES = {
   cfw_emu: {
-    hint: 'Startet Atmosphère (CFW) direkt über Hekate, erzwungen auf der emuMMC (SD-Karte). Empfohlen.',
+    hint: {
+      de: 'Startet Atmosphère (CFW) direkt über Hekate, erzwungen auf der emuMMC (SD-Karte). Empfohlen.',
+      en: 'Boots Atmosphère (CFW) directly via Hekate, forced on the emuMMC (SD card). Recommended.',
+    },
     lines: [
       'fss0=atmosphere/package3',
       'kip1=atmosphere/kips/*',
@@ -33,7 +36,10 @@ const ENTRY_TEMPLATES = {
     ],
   },
   cfw_sys: {
-    hint: 'Startet Atmosphère (CFW) direkt über Hekate, erzwungen auf der internen sysMMC.',
+    hint: {
+      de: 'Startet Atmosphère (CFW) direkt über Hekate, erzwungen auf der internen sysMMC.',
+      en: 'Boots Atmosphère (CFW) directly via Hekate, forced on the internal sysMMC.',
+    },
     lines: [
       'fss0=atmosphere/package3',
       'kip1=atmosphere/kips/*',
@@ -45,7 +51,10 @@ const ENTRY_TEMPLATES = {
   // gestartet (fss0=…/package3). "stock=1" deaktiviert alle CFW-Kips. Weil
   // exosphère statt des Original-secmon läuft, werden KEINE Fuses verbrannt.
   semistock: {
-    hint: 'OFW + Fuse-Prüfung übersprungen: originale Firmware über Atmosphère gestartet, verbrennt keine Fuses (Downgrade bleibt möglich). Kein CFW/Homebrew.',
+    hint: {
+      de: 'OFW + Fuse-Prüfung übersprungen: originale Firmware über Atmosphère gestartet, verbrennt keine Fuses (Downgrade bleibt möglich). Kein CFW/Homebrew.',
+      en: 'OFW + fuse check skipped: original firmware booted via Atmosphère, burns no fuses (downgrade stays possible). No CFW/homebrew.',
+    },
     lines: [
       'fss0=atmosphere/package3',
       'stock=1',
@@ -57,7 +66,10 @@ const ENTRY_TEMPLATES = {
   // ihrem eigenen Original-secmon. Fuses werden dabei ganz normal geprüft und
   // ggf. verbrannt (Anti-Downgrade), genau wie auf einer unmodifizierten Konsole.
   stock: {
-    hint: '100 % originale Firmware (ohne Atmosphère). Achtung: verbrennt/prüft Fuses wie im Auslieferungszustand – nur wählen, wenn du KEIN Downgrade mehr planst.',
+    hint: {
+      de: '100 % originale Firmware (ohne Atmosphère). Achtung: verbrennt/prüft Fuses wie im Auslieferungszustand – nur wählen, wenn du KEIN Downgrade mehr planst.',
+      en: '100% original firmware (without Atmosphère). Warning: burns/checks fuses like a factory console – only choose this if you no longer plan any downgrade.',
+    },
     lines: [
       'stock=1',
       'emummc_force_disable=1',

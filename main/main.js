@@ -7,6 +7,8 @@ const { COMPONENTS, CATEGORIES } = require('./components');
 const github = require('./github');
 const builder = require('./builder');
 const sd = require('./sd');
+const messages = require('./messages');
+const { mt } = messages;
 const { DEFAULT_HEKATE, ENTRY_ORDER, ENTRY_TEMPLATES, generateIni, normalize } = require('./hekate');
 
 let win = null;
@@ -39,6 +41,7 @@ function defaultSettings() {
     outputDir: defaultOutputDir(),
     outputDirCustom: false, // true, sobald der Nutzer bewusst „Ändern“ gewählt hat
     githubToken: '',
+    language: 'de', // 'de' | 'en'
   };
 }
 
@@ -125,6 +128,7 @@ function registerIpc() {
   ipcMain.handle('settings:save', (_e, partial) => {
     const merged = saveSettings(partial);
     github.setToken(merged.githubToken);
+    messages.setLang(merged.language);
     return merged;
   });
 
@@ -136,7 +140,7 @@ function registerIpc() {
           const r = await github.fetchLatest(c, { force });
           results[c.id] = { ok: true, ...r };
         } catch (err) {
-          results[c.id] = { ok: false, error: err.message };
+          results[c.id] = { ok: false, error: err.message, rateLimited: !!err.rateLimited };
         }
       })
     );
@@ -156,7 +160,7 @@ function registerIpc() {
   });
 
   ipcMain.handle('pack:build', async (_e, { outputDir, selectedIds, hekateConfig }) => {
-    if (building) throw new Error('Es läuft bereits ein Build.');
+    if (building) throw new Error(mt('err.buildRunning'));
     building = true;
     try {
       const summary = await builder.buildPack(
@@ -175,9 +179,9 @@ function registerIpc() {
   ipcMain.handle('sd:list', () => sd.listDrives());
 
   ipcMain.handle('sd:copy', async (_e, { packDir, driveLetter }) => {
-    if (copying) throw new Error('Es läuft bereits ein Kopiervorgang.');
+    if (copying) throw new Error(mt('err.copyRunning'));
     if (!builder.readPackInfo(packDir)) {
-      throw new Error('Im Zielordner liegt kein fertiges Pack. Bitte zuerst das Pack erstellen.');
+      throw new Error(mt('err.noPack'));
     }
     copying = true;
     try {
@@ -197,8 +201,10 @@ function registerIpc() {
 }
 
 app.whenReady().then(() => {
+  const startup = loadSettings();
   github.init(app.getPath('userData'));
-  github.setToken(loadSettings().githubToken);
+  github.setToken(startup.githubToken);
+  messages.setLang(startup.language);
   builder.init(app.getPath('userData'));
   registerIpc();
   createWindow();

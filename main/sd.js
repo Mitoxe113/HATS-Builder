@@ -3,6 +3,7 @@
 const fs = require('fs');
 const path = require('path');
 const { execFile } = require('child_process');
+const { mt } = require('./messages');
 
 function ps(command) {
   return new Promise((resolve, reject) => {
@@ -61,11 +62,11 @@ function listFiles(dir) {
 // überschrieben – so funktioniert auch das Aktualisieren eines bestehenden Setups).
 async function copyToDrive(packDir, driveLetter, emit) {
   if (!/^[A-Z]:$/i.test(driveLetter)) {
-    throw new Error(`Ungültiges Laufwerk: ${driveLetter}`);
+    throw new Error(mt('err.invalidDrive', driveLetter));
   }
   const root = `${driveLetter}\\`;
   if (!fs.existsSync(root)) {
-    throw new Error(`Laufwerk ${driveLetter} ist nicht verfügbar.`);
+    throw new Error(mt('err.driveUnavailable', driveLetter));
   }
 
   const files = listFiles(packDir);

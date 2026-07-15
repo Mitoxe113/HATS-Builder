@@ -1,6 +1,6 @@
 'use strict';
 
-/* global api */
+/* global api, window */
 
 // ── Globaler Zustand ────────────────────────────────────────────────────────
 const state = {
@@ -13,6 +13,8 @@ const state = {
   building: false,
   copying: false,
   drives: [],
+  lang: 'de',
+  appVersion: '',
 };
 
 const $ = (sel) => document.querySelector(sel);
@@ -22,6 +24,58 @@ const el = (tag, cls, text) => {
   if (text !== undefined) node.textContent = text;
   return node;
 };
+
+// ── Übersetzung ─────────────────────────────────────────────────────────────
+function t(key, ...args) {
+  const dict = window.I18N[state.lang] || window.I18N.de;
+  let s = dict[key] != null ? dict[key] : window.I18N.de[key] != null ? window.I18N.de[key] : key;
+  args.forEach((a, i) => {
+    s = s.split(`{${i}}`).join(String(a));
+  });
+  return s;
+}
+
+// Wählt aus einem { de, en }-Objekt (oder gibt einen String direkt zurück)
+function pick(obj) {
+  if (obj == null) return '';
+  if (typeof obj === 'string') return obj;
+  return obj[state.lang] != null ? obj[state.lang] : obj.de != null ? obj.de : '';
+}
+
+function applyI18n() {
+  document.documentElement.lang = state.lang;
+  document.querySelectorAll('[data-i18n]').forEach((n) => {
+    n.textContent = t(n.dataset.i18n);
+  });
+  document.querySelectorAll('[data-i18n-html]').forEach((n) => {
+    n.innerHTML = t(n.dataset.i18nHtml);
+  });
+  document.querySelectorAll('[data-i18n-ph]').forEach((n) => {
+    n.placeholder = t(n.dataset.i18nPh);
+  });
+  document.querySelectorAll('.lang-opt').forEach((b) => {
+    b.classList.toggle('active', b.dataset.lang === state.lang);
+  });
+  if (state.appVersion) {
+    $('#app-version').textContent = t('settings.version', state.appVersion);
+    const sv = $('#settings-version');
+    if (sv) sv.textContent = t('settings.version', state.appVersion);
+  }
+}
+
+function setLanguage(lang) {
+  if ((lang !== 'de' && lang !== 'en') || lang === state.lang) return;
+  state.lang = lang;
+  state.settings.language = lang;
+  saveSettings();
+  applyI18n();
+  // Alle dynamisch erzeugten Bereiche neu aufbauen
+  renderComponents();
+  renderReleaseStatus();
+  renderHekate();
+  renderBuildSummary();
+  renderDrives();
+}
 
 function toast(message, kind = 'info', ms = 5000) {
   const node = el('div', `toast ${kind}`, message);
@@ -38,7 +92,8 @@ function fmtBytes(bytes) {
 
 function fmtDate(iso) {
   if (!iso) return '';
-  return new Date(iso).toLocaleDateString('de-DE', { day: '2-digit', month: 'short', year: 'numeric' });
+  const locale = state.lang === 'en' ? 'en-GB' : 'de-DE';
+  return new Date(iso).toLocaleDateString(locale, { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
 function saveSettings() {
@@ -76,15 +131,13 @@ function setSelected(id, on) {
     const addWithDeps = (cid, isRoot) => {
       if (set.has(cid)) return;
       set.add(cid);
-      if (!isRoot) toast(`${nameOf(cid)} wurde automatisch mit aktiviert (wird benötigt).`, 'info', 4000);
+      if (!isRoot) toast(t('deps.autoEnabled', nameOf(cid)), 'info', 4000);
       for (const dep of (compOf(cid) || {}).requires || []) addWithDeps(dep, false);
     };
     addWithDeps(id, true);
     // Konflikte nur melden, nicht erzwingen
     for (const other of comp.conflicts || []) {
-      if (set.has(other)) {
-        toast(`${comp.name} und ${nameOf(other)} ersetzen beide dieselbe Datei – am besten nur eines aktiv lassen.`, 'info', 6500);
-      }
+      if (set.has(other)) toast(t('conflict.warn', comp.name, nameOf(other)), 'info', 6500);
     }
   } else {
     set.delete(id);
@@ -96,7 +149,7 @@ function setSelected(id, on) {
         if (!set.has(other.id)) continue;
         if ((other.requires || []).some((dep) => !set.has(dep))) {
           set.delete(other.id);
-          toast(`${other.name} wurde deaktiviert (Abhängigkeit fehlt).`, 'info', 4000);
+          toast(t('deps.autoDisabled', other.name), 'info', 4000);
           changed = true;
         }
       }
@@ -111,17 +164,14 @@ function setSelected(id, on) {
 
 function releaseBadge(id) {
   const rel = state.releases[id];
-  if (!rel) {
-    return el('span', 'badge loading', 'Version wird geladen …');
-  }
+  if (!rel) return el('span', 'badge loading', t('badge.loading'));
   if (!rel.ok) {
-    const isRateLimit = /Rate-Limit/i.test(rel.error || '');
-    const badge = el('span', 'badge error', isRateLimit ? 'Rate-Limit' : 'nicht erreichbar');
+    const badge = el('span', 'badge error', rel.rateLimited ? t('badge.rateLimit') : t('badge.unreachable'));
     badge.title = rel.error || '';
     return badge;
   }
   const wrap = el('span');
-  const version = el('span', 'badge version', rel.tag + (rel.stale ? ' (offline)' : ''));
+  const version = el('span', 'badge version', rel.tag + (rel.stale ? t('badge.offline') : ''));
   version.title = rel.name || '';
   wrap.appendChild(version);
   if (rel.publishedAt) wrap.appendChild(el('span', 'badge date', fmtDate(rel.publishedAt)));
@@ -138,8 +188,8 @@ function renderComponents() {
 
     const section = el('div', 'comp-section');
     const head = el('div', 'comp-section-head');
-    head.appendChild(el('h2', null, cat.name));
-    head.appendChild(el('span', null, cat.hint));
+    head.appendChild(el('h2', null, pick(cat.name)));
+    head.appendChild(el('span', null, pick(cat.hint)));
     section.appendChild(head);
 
     const grid = el('div', 'comp-grid');
@@ -153,7 +203,7 @@ function renderComponents() {
       nameWrap.appendChild(el('div', 'comp-name', comp.name));
       const repoLink = el('a', 'comp-repo', comp.repo);
       repoLink.href = '#';
-      repoLink.title = `github.com/${comp.repo} öffnen`;
+      repoLink.title = `github.com/${comp.repo}`;
       repoLink.addEventListener('click', (e) => {
         e.preventDefault();
         api.openExternal(`https://github.com/${comp.repo}`);
@@ -172,22 +222,22 @@ function renderComponents() {
       headRow.appendChild(toggleLabel);
       card.appendChild(headRow);
 
-      card.appendChild(el('div', 'comp-desc', comp.description));
+      card.appendChild(el('div', 'comp-desc', pick(comp.description)));
 
       const foot = el('div', 'comp-foot');
       const left = el('div', 'comp-foot-badges');
       left.appendChild(releaseBadge(comp.id));
       foot.appendChild(left);
       const right = el('div', 'comp-foot-badges');
-      if (comp.required) right.appendChild(el('span', 'badge required', 'Pflicht'));
+      if (comp.required) right.appendChild(el('span', 'badge required', t('badge.required')));
       if (comp.tag === 'sigpatch') {
-        const b = el('span', 'badge tag', 'Sigpatch');
-        b.title = 'Umgeht Signaturprüfungen – bewusst aktivieren.';
+        const b = el('span', 'badge tag', t('tag.sigpatch'));
+        b.title = t('tag.sigpatch.title');
         right.appendChild(b);
       }
       if (comp.tag === 'thirdparty') {
-        const b = el('span', 'badge tag', 'Drittanbieter');
-        b.title = 'Kommt nicht vom Original-Entwickler der CFW-Komponenten.';
+        const b = el('span', 'badge tag', t('tag.thirdparty'));
+        b.title = t('tag.thirdparty.title');
         right.appendChild(b);
       }
       foot.appendChild(right);
@@ -199,8 +249,35 @@ function renderComponents() {
     host.appendChild(section);
   }
 
-  const count = state.components.filter((c) => isSelected(c.id)).length;
-  $('#nav-badge-components').textContent = count;
+  $('#nav-badge-components').textContent = state.components.filter((c) => isSelected(c.id)).length;
+}
+
+// Zeigt die Zusammenfassungs-Statusleiste anhand von state.releases
+function renderReleaseStatus() {
+  const status = $('#release-status');
+  const all = Object.values(state.releases);
+  if (!all.length) {
+    status.className = 'release-status';
+    return;
+  }
+  const failed = all.filter((r) => !r.ok).length;
+  const stale = all.filter((r) => r.ok && r.stale).length;
+  const rateLimitMsg =
+    (all.find((r) => !r.ok && r.rateLimited) || {}).error ||
+    (all.find((r) => r.ok && r.stale && r.staleRateLimited) || {}).staleReason;
+  if (failed) {
+    status.className = 'release-status visible warn';
+    status.textContent = rateLimitMsg ? t('status.failed', failed, rateLimitMsg) : t('status.failedGeneric', failed);
+  } else if (stale) {
+    status.className = 'release-status visible warn';
+    status.textContent = rateLimitMsg ? t('status.staleRate', rateLimitMsg) : t('status.staleOffline');
+  } else {
+    status.className = 'release-status visible info';
+    const newest = all
+      .filter((r) => r.ok && r.publishedAt)
+      .sort((a, b) => b.publishedAt.localeCompare(a.publishedAt))[0];
+    status.textContent = newest ? t('status.allCurrent', fmtDate(newest.publishedAt)) : t('status.allCurrentNoDate');
+  }
 }
 
 async function checkReleases(force) {
@@ -209,39 +286,14 @@ async function checkReleases(force) {
   btn.disabled = true;
   btn.querySelector('svg').classList.add('spin');
   status.className = 'release-status visible info';
-  status.textContent = 'Frage die neuesten Versionen bei GitHub an …';
+  status.textContent = t('status.checking');
 
   try {
     state.releases = await api.checkReleases(force);
-    const all = Object.values(state.releases);
-    const failed = all.filter((r) => !r.ok).length;
-    const stale = all.filter((r) => r.ok && r.stale).length;
-    // Rate-Limit-Grund gezielt herausfischen – der hilfreichste Hinweis
-    const rateLimitMsg =
-      (all.find((r) => !r.ok && /Rate-Limit/i.test(r.error || '')) || {}).error ||
-      (all.find((r) => r.ok && r.stale && /Rate-Limit/i.test(r.staleReason || '')) || {}).staleReason;
-    if (failed) {
-      status.className = 'release-status visible warn';
-      status.textContent = rateLimitMsg
-        ? `${failed} Komponente(n) ohne Daten: ${rateLimitMsg}`
-        : `${failed} Komponente(n) konnten nicht abgefragt werden – bitte Internetverbindung prüfen.`;
-    } else if (stale) {
-      status.className = 'release-status visible warn';
-      status.textContent = rateLimitMsg
-        ? `Zeige gespeicherte Versionen. ${rateLimitMsg}`
-        : 'Offline – zeige zuletzt bekannte Versionen aus dem Cache.';
-    } else {
-      status.className = 'release-status visible info';
-      const newest = Object.values(state.releases)
-        .filter((r) => r.ok && r.publishedAt)
-        .sort((a, b) => b.publishedAt.localeCompare(a.publishedAt))[0];
-      status.textContent = newest
-        ? `Alle Versionen aktuell. Neuestes Release: ${fmtDate(newest.publishedAt)}.`
-        : 'Alle Versionen aktuell.';
-    }
+    renderReleaseStatus();
   } catch (err) {
     status.className = 'release-status visible warn';
-    status.textContent = `Versions-Check fehlgeschlagen: ${err.message}`;
+    status.textContent = t('status.checkFailed', err.message);
   } finally {
     btn.disabled = false;
     btn.querySelector('svg').classList.remove('spin');
@@ -252,41 +304,13 @@ async function checkReleases(force) {
 
 // ── Hekate-Ansicht ──────────────────────────────────────────────────────────
 const HEKATE_GENERAL = [
-  {
-    key: 'autoboot', type: 'select',
-    name: 'Autoboot',
-    desc: 'Welcher Eintrag automatisch gestartet wird. Halte VOL– beim Start, um trotzdem ins Menü zu kommen.',
-  },
-  {
-    key: 'bootwait', type: 'slider', min: 0, max: 20, unit: 's',
-    name: 'Boot-Wartezeit',
-    desc: 'So lange wird das Boot-Logo gezeigt (Zeitfenster, um mit VOL– ins Menü zu kommen).',
-  },
-  {
-    key: 'backlight', type: 'slider', min: 0, max: 200, unit: '',
-    name: 'Display-Helligkeit',
-    desc: 'Helligkeit des Boot-Menüs (Standard: 100).',
-  },
-  {
-    key: 'autonogc', type: 'toggle',
-    name: 'Auto-NoGC',
-    desc: 'Schützt den Gamecard-Slot automatisch, wenn die Firmware neuer ist als die gebrannten Fuses. Empfohlen: an.',
-  },
-  {
-    key: 'autohosoff', type: 'toggle',
-    name: 'Auto HOS Power-Off',
-    desc: 'Schaltet die Konsole wirklich aus, wenn sie aus dem HOS heraus ausgeschaltet wurde (statt Reboot zu Hekate).',
-  },
-  {
-    key: 'updater2p', type: 'toggle',
-    name: 'Hekate-Selbstupdate',
-    desc: 'Erlaubt Hekate, sich über bootloader/update.bin selbst zu aktualisieren.',
-  },
-  {
-    key: 'bootprotect', type: 'toggle',
-    name: 'Boot-Schutz',
-    desc: 'Schützt Hekate-Boot-Dateien vor versehentlichem Überschreiben.',
-  },
+  { key: 'autoboot', type: 'select', nameKey: 'gen.autoboot', descKey: 'gen.autoboot.desc' },
+  { key: 'bootwait', type: 'slider', min: 0, max: 20, unit: 's', nameKey: 'gen.bootwait', descKey: 'gen.bootwait.desc' },
+  { key: 'backlight', type: 'slider', min: 0, max: 200, unit: '', nameKey: 'gen.backlight', descKey: 'gen.backlight.desc' },
+  { key: 'autonogc', type: 'toggle', nameKey: 'gen.autonogc', descKey: 'gen.autonogc.desc' },
+  { key: 'autohosoff', type: 'toggle', nameKey: 'gen.autohosoff', descKey: 'gen.autohosoff.desc' },
+  { key: 'updater2p', type: 'toggle', nameKey: 'gen.updater2p', descKey: 'gen.updater2p.desc' },
+  { key: 'bootprotect', type: 'toggle', nameKey: 'gen.bootprotect', descKey: 'gen.bootprotect.desc' },
 ];
 
 function hekateConf() {
@@ -315,7 +339,7 @@ function renderBootEntries() {
         const othersOn = state.entryOrder.some((k) => k !== key && hekateConf().entries[k].enabled);
         if (!othersOn) {
           checkbox.checked = true;
-          toast('Mindestens ein Boot-Eintrag muss aktiv bleiben.', 'info', 4000);
+          toast(t('bootentry.minOne'), 'info', 4000);
           return;
         }
       }
@@ -343,7 +367,7 @@ function renderBootEntries() {
       updateIniPreview();
     });
     body.appendChild(nameInput);
-    body.appendChild(el('div', 'boot-entry-hint', state.entryHints[key] || ''));
+    body.appendChild(el('div', 'boot-entry-hint', pick(state.entryHints[key])));
     row.appendChild(body);
 
     host.appendChild(row);
@@ -354,13 +378,13 @@ function renderAutobootOptions() {
   const select = $('#autoboot-select');
   if (!select) return;
   select.textContent = '';
-  const optMenu = el('option', null, 'Boot-Menü anzeigen');
+  const optMenu = el('option', null, t('autoboot.showMenu'));
   optMenu.value = '';
   select.appendChild(optMenu);
   // Werte sind Eintrags-SCHLÜSSEL (nicht Positionen) – so bleibt die Auswahl
   // stabil, auch wenn andere Einträge de-/aktiviert werden.
   enabledEntries().forEach((key) => {
-    const opt = el('option', null, hekateConf().entries[key].name || '(ohne Namen)');
+    const opt = el('option', null, hekateConf().entries[key].name || t('autoboot.unnamed'));
     opt.value = key;
     select.appendChild(opt);
   });
@@ -373,8 +397,8 @@ function renderHekateGeneral() {
   for (const setting of HEKATE_GENERAL) {
     const row = el('div', 'setting-row');
     const info = el('div', 'setting-info');
-    info.appendChild(el('div', 'setting-name', setting.name));
-    info.appendChild(el('div', 'setting-desc', setting.desc));
+    info.appendChild(el('div', 'setting-name', t(setting.nameKey)));
+    info.appendChild(el('div', 'setting-desc', t(setting.descKey)));
     row.appendChild(info);
 
     if (setting.type === 'select') {
@@ -467,7 +491,7 @@ function renderBuildSummary() {
 function setBuildProgress(percent, label, count) {
   $('#build-progress').hidden = false;
   $('#progress-fill').style.width = `${Math.min(100, percent)}%`;
-  if (label) $('#progress-step-label').textContent = label;
+  if (label != null) $('#progress-step-label').textContent = label;
   if (count !== undefined) $('#progress-step-count').textContent = count;
 }
 
@@ -484,11 +508,7 @@ function handleProgress(event) {
   if (event.type === 'step') {
     currentStep = event;
     const base = ((event.step - 1) / event.totalSteps) * 100;
-    setBuildProgress(
-      base,
-      `${event.name}${event.version ? ` ${event.version}` : ''}`,
-      `${event.step} / ${event.totalSteps}`
-    );
+    setBuildProgress(base, `${event.name}${event.version ? ` ${event.version}` : ''}`, `${event.step} / ${event.totalSteps}`);
     logLine(`▸ ${event.name}${event.version ? ` ${event.version}` : ''}`);
   } else if (event.type === 'log') {
     logLine(`  ${event.text}`);
@@ -496,13 +516,12 @@ function handleProgress(event) {
     const withinStep = event.total ? event.done / event.total : 0;
     const base = ((currentStep.step - 1 + withinStep * 0.9) / currentStep.totalSteps) * 100;
     setBuildProgress(base);
-    $('#progress-step-label').textContent =
-      `${event.asset} – ${fmtBytes(event.done)}${event.total ? ` / ${fmtBytes(event.total)}` : ''}`;
+    $('#progress-step-label').textContent = `${event.asset} – ${fmtBytes(event.done)}${event.total ? ` / ${fmtBytes(event.total)}` : ''}`;
   } else if (event.type === 'sd-progress') {
     $('#sd-progress').hidden = false;
     $('#sd-progress-fill').style.width = `${(event.doneBytes / Math.max(1, event.totalBytes)) * 100}%`;
     $('#sd-progress-label').textContent = event.current;
-    $('#sd-progress-count').textContent = `${event.doneFiles} / ${event.totalFiles} Dateien`;
+    $('#sd-progress-count').textContent = t('sd.files', event.doneFiles, event.totalFiles);
   }
 }
 
@@ -511,10 +530,10 @@ async function build() {
   state.building = true;
   const btn = $('#btn-build');
   btn.disabled = true;
-  btn.querySelector('span').textContent = 'Erstelle Pack …';
+  btn.querySelector('span').textContent = t('build.creating');
   $('#build-result').hidden = true;
   $('#progress-log').textContent = '';
-  setBuildProgress(0, 'Vorbereitung …', '');
+  setBuildProgress(0, t('build.prep'), '');
 
   try {
     const summary = await api.buildPack({
@@ -522,43 +541,42 @@ async function build() {
       selectedIds: state.settings.selected,
       hekateConfig: hekateConf(),
     });
-    setBuildProgress(100, 'Fertig!', '');
-    logLine('✓ Pack erfolgreich erstellt', 'log-ok');
+    setBuildProgress(100, t('build.done'), '');
+    logLine(t('build.logOk'), 'log-ok');
 
     const result = $('#build-result');
     result.hidden = false;
     result.textContent = '';
-    result.appendChild(
-      el('div', null, `✓ Pack fertig: ${summary.files} Dateien, ${fmtBytes(summary.bytes)}. Bereit für die SD-Karte!`)
-    );
-    result.appendChild(
-      el('div', 'versions', summary.components.map((c) => `${c.name} ${c.version}`).join('  ·  '))
-    );
-    toast('SD-Pack erfolgreich erstellt!', 'success');
+    result.appendChild(el('div', null, t('build.resultOk', summary.files, fmtBytes(summary.bytes))));
+    result.appendChild(el('div', 'versions', summary.components.map((c) => `${c.name} ${c.version}`).join('  ·  ')));
+    toast(t('toast.buildSuccess'), 'success');
     refreshDrives();
   } catch (err) {
     logLine(`✗ ${err.message}`);
-    toast(`Fehler beim Erstellen: ${err.message}`, 'error', 9000);
+    toast(t('toast.buildError', err.message), 'error', 9000);
   } finally {
     state.building = false;
     btn.disabled = false;
-    btn.querySelector('span').textContent = 'Pack erstellen';
+    btn.querySelector('span').textContent = t('build.create');
   }
 }
 
 async function refreshDrives() {
-  const host = $('#drive-list');
   try {
     state.drives = await api.listDrives();
   } catch {
     state.drives = [];
   }
+  renderDrives();
+}
+
+// Rendert die Laufwerksliste aus state.drives (ohne neue Abfrage)
+function renderDrives() {
+  const host = $('#drive-list');
   host.textContent = '';
 
   if (!state.drives.length) {
-    host.appendChild(
-      el('div', 'drive-empty', 'Keine SD-Karte gefunden. Karte einstecken und auf „Aktualisieren“ klicken.')
-    );
+    host.appendChild(el('div', 'drive-empty', t('sd.empty')));
     return;
   }
 
@@ -569,9 +587,7 @@ async function refreshDrives() {
     head.appendChild(el('div', 'drive-letter', drive.letter));
     const info = el('div');
     info.appendChild(el('div', 'drive-name', drive.label));
-    info.appendChild(
-      el('div', 'drive-meta', `${fmtBytes(drive.free)} frei von ${fmtBytes(drive.size)} · ${drive.fileSystem}`)
-    );
+    info.appendChild(el('div', 'drive-meta', t('sd.freeOf', fmtBytes(drive.free), fmtBytes(drive.size), drive.fileSystem)));
     head.appendChild(info);
     card.appendChild(head);
 
@@ -582,12 +598,10 @@ async function refreshDrives() {
     card.appendChild(bar);
 
     if (!drive.fat32) {
-      const warn = el('div', 'drive-fs-warn');
-      warn.textContent = `⚠ ${drive.fileSystem} statt FAT32 – die Switch läuft mit FAT32 am stabilsten.`;
-      card.appendChild(warn);
+      card.appendChild(el('div', 'drive-fs-warn', t('sd.fsWarn', drive.fileSystem)));
     }
 
-    const btn = el('button', 'btn btn-secondary', `Pack auf ${drive.letter} kopieren`);
+    const btn = el('button', 'btn btn-secondary', t('sd.copyTo', drive.letter));
     btn.addEventListener('click', () => copyToDrive(drive, btn));
     card.appendChild(btn);
 
@@ -599,38 +613,47 @@ async function copyToDrive(drive, btn) {
   if (state.copying) return;
   const info = await api.packInfo(state.settings.outputDir);
   if (!info) {
-    toast('Bitte zuerst ein Pack erstellen – im Zielordner liegt noch keins.', 'error');
+    toast(t('sd.needPack'), 'error');
     return;
   }
-  const ok = confirm(
-    `Pack auf ${drive.letter} (${drive.label}) kopieren?\n\n` +
-      'Vorhandene CFW-Dateien auf der Karte werden mit den neuen Versionen überschrieben. ' +
-      'Spielstände, Nintendo-Ordner und emuMMC bleiben unangetastet.'
-  );
-  if (!ok) return;
+  if (!confirm(t('sd.confirm', drive.letter, drive.label))) return;
 
   state.copying = true;
   btn.disabled = true;
   $('#sd-progress').hidden = false;
 
   try {
-    const result = await api.copyToDrive({
-      packDir: state.settings.outputDir,
-      driveLetter: drive.letter,
-    });
-    $('#sd-progress-label').textContent = 'Fertig!';
-    toast(
-      `${result.files} Dateien (${fmtBytes(result.bytes)}) auf ${drive.letter} kopiert. ` +
-        'SD-Karte sicher auswerfen und ab in die Switch!',
-      'success',
-      9000
-    );
+    const result = await api.copyToDrive({ packDir: state.settings.outputDir, driveLetter: drive.letter });
+    $('#sd-progress-label').textContent = t('build.done');
+    toast(t('sd.copyDone', result.files, fmtBytes(result.bytes), drive.letter), 'success', 9000);
   } catch (err) {
-    toast(`Kopieren fehlgeschlagen: ${err.message}`, 'error', 9000);
+    toast(t('sd.copyError', err.message), 'error', 9000);
   } finally {
     state.copying = false;
     btn.disabled = false;
   }
+}
+
+// ── Einstellungen-Fenster ────────────────────────────────────────────────────
+function initSettingsModal() {
+  const modal = $('#settings-modal');
+  const open = () => {
+    modal.hidden = false;
+  };
+  const close = () => {
+    modal.hidden = true;
+  };
+  $('#btn-settings').addEventListener('click', open);
+  $('#btn-settings-close').addEventListener('click', close);
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) close();
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !modal.hidden) close();
+  });
+  document.querySelectorAll('.lang-opt').forEach((b) => {
+    b.addEventListener('click', () => setLanguage(b.dataset.lang));
+  });
 }
 
 // ── Initialisierung ─────────────────────────────────────────────────────────
@@ -641,9 +664,12 @@ async function main() {
   state.entryOrder = data.entryOrder;
   state.entryHints = data.entryHints;
   state.settings = data.settings;
-  $('#app-version').textContent = `Version ${data.version}`;
+  state.appVersion = data.version;
+  state.lang = data.settings.language === 'en' ? 'en' : 'de';
 
+  applyI18n();
   initNav();
+  initSettingsModal();
   renderComponents();
   renderHekate();
   renderBuildSummary();
@@ -657,12 +683,7 @@ async function main() {
   $('#btn-save-token').addEventListener('click', async () => {
     state.settings.githubToken = tokenInput.value.trim();
     await api.saveSettings(state.settings);
-    toast(
-      state.settings.githubToken
-        ? 'Token gespeichert – prüfe Versionen neu …'
-        : 'Token entfernt.',
-      'success'
-    );
+    toast(state.settings.githubToken ? t('token.saved') : t('token.removed'), 'success');
     checkReleases(true);
   });
   $('#btn-token-help').addEventListener('click', () =>
@@ -690,5 +711,5 @@ async function main() {
 
 main().catch((err) => {
   console.error(err);
-  toast(`Initialisierung fehlgeschlagen: ${err.message}`, 'error', 15000);
+  toast(t('init.failed', err.message), 'error', 15000);
 });
