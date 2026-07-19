@@ -15,12 +15,11 @@ const DEFAULT_HEKATE = {
     cfw_emu:   { enabled: true,  name: 'CFW (emuMMC)' },
     cfw_sys:   { enabled: false, name: 'CFW (sysMMC)' },
     semistock: { enabled: true,  name: 'Semi-Stock' },
-    stock:     { enabled: true,  name: 'Stock' },
   },
 };
 
 // Reihenfolge der Einträge im Boot-Menü
-const ENTRY_ORDER = ['cfw_emu', 'cfw_sys', 'semistock', 'stock'];
+const ENTRY_ORDER = ['cfw_emu', 'cfw_sys', 'semistock'];
 
 const ENTRY_TEMPLATES = {
   cfw_emu: {
@@ -57,20 +56,6 @@ const ENTRY_TEMPLATES = {
     },
     lines: [
       'fss0=atmosphere/package3',
-      'stock=1',
-      'emummc_force_disable=1',
-      'icon=bootloader/res/icon_switch.bmp',
-    ],
-  },
-  // Stock: 100 % OFW – "stock=1" OHNE fss0 bootet die installierte Firmware mit
-  // ihrem eigenen Original-secmon. Fuses werden dabei ganz normal geprüft und
-  // ggf. verbrannt (Anti-Downgrade), genau wie auf einer unmodifizierten Konsole.
-  stock: {
-    hint: {
-      de: '100 % originale Firmware (ohne Atmosphère). Achtung: verbrennt/prüft Fuses wie im Auslieferungszustand – nur wählen, wenn du KEIN Downgrade mehr planst.',
-      en: '100% original firmware (without Atmosphère). Warning: burns/checks fuses like a factory console – only choose this if you no longer plan any downgrade.',
-    },
-    lines: [
       'stock=1',
       'emummc_force_disable=1',
       'icon=bootloader/res/icon_switch.bmp',
