@@ -1,7 +1,7 @@
 {
   "name": "hats-builder",
   "productName": "HATS Builder",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Nintendo Switch CFW-Pack-Builder – offizielle Releases direkt von den Entwicklern, fertig für die SD-Karte",
   "main": "main/main.js",
   "author": "Marco",
