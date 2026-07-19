@@ -358,7 +358,6 @@ const COMPONENTS = [
     name: 'HATS-Tools',
     repo: 'sthetix/HATS-Tools',
     category: 'tools',
-    tag: 'thirdparty',
     description: {
       de: 'Konfigurations- und Wartungstools von sthetix (Drittanbieter-Pack).',
       en: 'Configuration and maintenance tools by sthetix (third-party pack).',

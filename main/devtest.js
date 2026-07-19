@@ -74,55 +74,82 @@ async function takeScreenshots(win, shotDir) {
   await shot('view-hekate-en.png');
 }
 
-// Klickt Komponenten-Toggles im echten UI und prüft, ob Abhängigkeiten
-// automatisch aktiviert bzw. Abhängige deaktiviert werden.
+// Prüft im echten UI für JEDE Komponente mit Abhängigkeiten, dass ein Klick
+// darauf alle (auch transitiven) benötigten Komponenten automatisch mit
+// aktiviert – plus die umgekehrte Kaskade beim Deaktivieren.
 async function testDependencies(win) {
-  const click = (id) =>
-    win.webContents.executeJavaScript(
-      `document.querySelector('.comp-card[data-id="${id}"] input[type=checkbox]').click(); true`
-    );
-  const selection = () =>
-    win.webContents.executeJavaScript('JSON.stringify(window.__APP_STATE__.settings.selected)')
-      .then((s) => new Set(JSON.parse(s)));
-  const isChecked = (id) =>
-    win.webContents.executeJavaScript(
-      `document.querySelector('.comp-card[data-id="${id}"] input[type=checkbox]').checked`
-    );
+  const res = await win.webContents.executeJavaScript(`(() => {
+    const S = window.__APP_STATE__;
+    const byId = new Map(S.components.map((c) => [c.id, c]));
+    const cb = (id) => document.querySelector('.comp-card[data-id="' + id + '"] input[type=checkbox]');
+    const sel = () => new Set(S.settings.selected);
 
-  const results = [];
-  const check = (name, cond) => {
-    results.push(cond);
-    console.log(`${cond ? 'OK  ' : 'FAIL'}  ${name}`);
-  };
+    // transitive Hülle der requires-Kette
+    const transReq = (id) => {
+      const out = new Set();
+      const walk = (x) => {
+        for (const d of (byId.get(x) || {}).requires || []) {
+          if (!out.has(d)) { out.add(d); walk(d); }
+        }
+      };
+      walk(id);
+      return [...out];
+    };
 
-  // Ausgangszustand: relevante Komponenten deaktivieren
-  for (const id of ['fpslocker', 'saltynx', 'ovlloader', 'sysclkovl', 'sysclk']) {
-    if (await isChecked(id)) await click(id);
+    // Alles außer Pflicht-Komponenten abschalten (mehrere Durchläufe wg. Kaskade)
+    const resetBaseline = () => {
+      for (let pass = 0; pass < 12; pass++) {
+        let any = false;
+        for (const c of S.components) {
+          const box = cb(c.id);
+          if (box && box.checked && !box.disabled) { box.click(); any = true; }
+        }
+        if (!any) break;
+      }
+    };
+
+    const out = { forward: [], reverse: [] };
+
+    // Vorwärts: jede Komponente mit Abhängigkeiten anklicken → alle deps müssen an sein
+    for (const c of S.components) {
+      const needs = transReq(c.id);
+      if (!needs.length) continue;
+      resetBaseline();
+      const box = cb(c.id);
+      if (!box) { out.forward.push({ id: c.id, name: c.name, ok: false, missing: ['(kein Toggle)'] }); continue; }
+      if (!box.checked) box.click();
+      const s = sel();
+      const missing = needs.filter((r) => !s.has(r));
+      out.forward.push({ id: c.id, name: c.name, needs, ok: missing.length === 0 && s.has(c.id), missing });
+    }
+
+    // Rückwärts: eine Abhängigkeit abschalten → Abhängige müssen mit rausfallen
+    resetBaseline();
+    const fps = cb('fpslocker');
+    if (fps && !fps.checked) fps.click(); // zieht saltynx + ovlloader mit
+    const before = sel();
+    const ovl = cb('ovlloader');
+    if (ovl && ovl.checked) ovl.click(); // ovlloader aus → fpslocker muss raus, saltynx bleibt
+    const after = sel();
+    out.reverse.push({ name: 'ovlloader aus → fpslocker deaktiviert', ok: before.has('fpslocker') && !after.has('fpslocker') });
+    out.reverse.push({ name: 'ovlloader aus → saltynx bleibt (haengt nicht an ovlloader)', ok: after.has('saltynx') });
+
+    return out;
+  })()`);
+
+  let ok = true;
+  console.log('— Vorwärts (Klick aktiviert alle benötigten Komponenten) —');
+  for (const r of res.forward) {
+    ok = ok && r.ok;
+    console.log(`${r.ok ? 'OK  ' : 'FAIL'}  ${r.name} → braucht [${(r.needs || []).join(', ')}]` + (r.ok ? '' : `  FEHLT: [${r.missing.join(', ')}]`));
   }
-
-  // 1) FPSLocker aktivieren → SaltyNX + nx-ovlloader automatisch an
-  await click('fpslocker');
-  let sel = await selection();
-  check('FPSLocker → SaltyNX automatisch aktiv', sel.has('saltynx'));
-  check('FPSLocker → nx-ovlloader automatisch aktiv', sel.has('ovlloader'));
-  check('FPSLocker selbst aktiv', sel.has('fpslocker'));
-
-  // 2) nx-ovlloader deaktivieren → FPSLocker fliegt mit raus, SaltyNX bleibt
-  await click('ovlloader');
-  sel = await selection();
-  check('ovlloader aus → FPSLocker automatisch deaktiviert', !sel.has('fpslocker'));
-  check('ovlloader aus → SaltyNX bleibt aktiv (hängt nicht an ovlloader)', sel.has('saltynx'));
-
-  // 3) sys-clk Overlay aktivieren → sys-clk-Basis + ovlloader automatisch an
-  await click('sysclkovl');
-  sel = await selection();
-  check('sys-clk Overlay → sys-clk (Basis) automatisch aktiv', sel.has('sysclk'));
-  check('sys-clk Overlay → nx-ovlloader automatisch aktiv', sel.has('ovlloader'));
-
-  // 4) Toggle-Optik entspricht dem Zustand
-  check('Checkbox-Zustand konsistent (saltynx)', await isChecked('saltynx'));
-
-  return results.every(Boolean);
+  console.log('— Rückwärts (Kaskade beim Deaktivieren) —');
+  for (const r of res.reverse) {
+    ok = ok && r.ok;
+    console.log(`${r.ok ? 'OK  ' : 'FAIL'}  ${r.name}`);
+  }
+  console.log(`— ${res.forward.length} Komponenten mit Abhängigkeiten geprüft —`);
+  return ok;
 }
 
 function register(win, app) {
