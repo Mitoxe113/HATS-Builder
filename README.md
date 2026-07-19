@@ -1,89 +1,69 @@
 # HATS Builder
 
-Windows-App zum Erstellen eines kompletten Nintendo-Switch-CFW-Packs für die SD-Karte –
+Windows-App (Electron), die ein komplettes Nintendo-Switch-CFW-Pack für die SD-Karte baut –
 **ausschließlich aus offiziellen Releases**, direkt von den GitHub-Repos der Entwickler.
+Oberfläche auf **Deutsch & Englisch** (umschaltbar in den Einstellungen).
 
-![Ansichten: Komponenten · Hekate-Config · Erstellen & SD](.)
+A Windows app that builds a complete Nintendo Switch CFW pack for your SD card —
+**only from official releases**, straight from the developers' GitHub repos.
+UI in **German & English** (toggle in Settings).
 
-## Was die App macht
+**[English](#english) · [Deutsch](#deutsch)**
 
-1. **Komponenten** – Auswählen, was ins Pack kommt. Versionen werden live von GitHub
-   abgefragt, gruppiert in fünf Kategorien:
-   - **Basis:** Atmosphère, Hekate + Nyx
-   - **Homebrew-Apps:** Homebrew App Store, JKSV, ftpd, NX-Shell, EdiZon, Goldleaf,
-     DBI (English), Sphaira, CyberFoil, Switch 90DNS Tester, Battery Desync Fix
-   - **System-Module:** nx-ovlloader, sys-clk (Basis), sys-patch, emuiibo, SaltyNX, MissionControl
-   - **Tesla-Overlays:** Ultrahand, EdiZon Overlay, FPSLocker, QuickNTP,
-     Status Monitor Deux, Sysmodules Overlay, sys-clk Overlay
-   - **Tools & Extras:** Lockpick_RCM, HATS-Tools, Theme-Patches
+---
 
-   Abhängigkeiten (z. B. Ultrahand → nx-ovlloader, FPSLocker → SaltyNX) werden automatisch
-   mit aktiviert. Zwei Komponenten sind bewusst markiert: **sys-patch** (Sigpatch –
-   umgeht Signaturprüfungen) und **HATS-Tools** (Drittanbieter-Pack von sthetix).
+## English
 
-   **Versions-Abfragen & Rate-Limit:** GitHub erlaubt ohne Anmeldung nur 60 API-Abfragen pro
-   Stunde – deshalb konnte früher „nicht erreichbar“ / „Rate-Limit“ erscheinen. Die App
-   minimiert den Verbrauch jetzt über einen Platten-Cache (15 min TTL) und ETag-Abfragen
-   (unveränderte Releases antworten mit `304` und zählen **nicht** gegen das Limit). Wer
-   ganz sicher gehen will, hinterlegt unten im Komponenten-Tab ein kostenloses
-   **GitHub-Token** (keine Berechtigungen nötig) → 5.000 Abfragen/Stunde. Der Token wird
-   nur lokal gespeichert. Bei erschöpftem Limit zeigt die App die zuletzt bekannten
-   Versionen aus dem Cache und nennt die Reset-Uhrzeit.
+Three tabs:
 
-2. **Hekate-Config** – Boot-Menü-Einstellungen (Autoboot, Boot-Wartezeit, Helligkeit,
-   Auto-NoGC …) und Boot-Einträge mit Live-Vorschau der `hekate_ipl.ini`.
-3. **Erstellen & SD** – Lädt die neuesten offiziellen Versionen, baut den fertigen
-   SD-Ordner und kopiert ihn auf Wunsch direkt auf die SD-Karte (Merge – Saves,
-   Nintendo-Ordner und emuMMC bleiben unberührt).
+- **Components** — pick what goes into the pack; versions are pulled live from GitHub.
+  Dependencies auto-enable (e.g. FPSLocker → SaltyNX). `sys-patch` (sigpatch) and
+  `HATS-Tools` (sthetix third-party pack) are clearly flagged.
+- **Hekate Config** — boot-menu settings (autoboot, wait time, brightness, Auto-NoGC)
+  and boot entries with a live `hekate_ipl.ini` preview.
+- **Build & SD** — downloads the latest versions, builds the SD folder and copies it to
+  the card (merge — saves, the Nintendo folder and emuMMC stay untouched).
 
-**Sprache & Einstellungen:** Über den Button unten links öffnet sich ein
-Einstellungen-Fenster. Die komplette Oberfläche (inkl. Komponenten-Beschreibungen
-und Fehlermeldungen) ist auf **Deutsch und Englisch** umschaltbar; die Auswahl
-wird gespeichert.
+**Run:** `dist\HATS Builder.exe` (portable) or the installer `HATS Builder Setup.exe`.
+The `Switch-SD-Pack` folder is created next to the EXE.
 
-## Starten
-
-**Fertige App:** `dist\HATS Builder.exe` (portable, einfach doppelklicken)
-oder den Installer `dist\HATS Builder Setup.exe` ausführen.
-
-Der Ordner `Switch-SD-Pack` wird standardmäßig **neben der EXE** angelegt
-(bzw. im Projektordner im Dev-Modus) – änderbar über „Ändern“ im Erstellen-Tab.
-
-**Entwicklungsmodus:**
+**Dev / build:**
 
 ```
 npm install
-npm start
+npm start        # run in dev mode
+npm run dist     # build the EXE
 ```
 
-**EXE neu bauen:**
+**Notes:** The SD card should be **FAT32** (the app warns on exFAT). An optional free
+**GitHub token** (Settings) raises the API limit from 60 to 5,000 requests/hour. Made for an
+already-modded Switch (modchip or RCM); `payload.bin` is placed in the SD root automatically.
+
+---
+
+## Deutsch
+
+Drei Tabs:
+
+- **Komponenten** — auswählen, was ins Pack kommt; Versionen kommen live von GitHub.
+  Abhängigkeiten werden automatisch mit aktiviert (z. B. FPSLocker → SaltyNX). `sys-patch`
+  (Sigpatch) und `HATS-Tools` (Drittanbieter-Pack von sthetix) sind klar markiert.
+- **Hekate-Config** — Boot-Menü-Einstellungen (Autoboot, Wartezeit, Helligkeit, Auto-NoGC)
+  und Boot-Einträge mit Live-Vorschau der `hekate_ipl.ini`.
+- **Erstellen & SD** — lädt die neuesten Versionen, baut den SD-Ordner und kopiert ihn auf
+  die Karte (Merge — Saves, Nintendo-Ordner und emuMMC bleiben unberührt).
+
+**Starten:** `dist\HATS Builder.exe` (portable) oder den Installer `HATS Builder Setup.exe`.
+Der Ordner `Switch-SD-Pack` wird neben der EXE angelegt.
+
+**Entwicklung / Build:**
 
 ```
-npm run dist
+npm install
+npm start        # Entwicklungsmodus
+npm run dist     # EXE bauen
 ```
 
-## Hinweise
-
-- Alle Komponenten kommen direkt aus dem **offiziellen GitHub-Repo des jeweiligen
-  Entwicklers** – kein Umpacken über Dritte. Ausnahmen sind klar markiert:
-  **sys-patch** (Sigpatch) und **HATS-Tools** (Pack von sthetix).
-- Downloads werden gecacht (`%APPDATA%\hats-builder\download-cache`),
-  erneutes Bauen ist daher schnell und offline möglich.
-- Die SD-Karte sollte mit **FAT32** formatiert sein – die App warnt bei exFAT.
-- Erstellt für den Einsatz auf einer bereits gemoddeten Switch (Modchip oder RCM).
-  `payload.bin` liegt für Modchips automatisch im SD-Root.
-
-## Aufbau
-
-```
-main/            Electron-Hauptprozess
-  components.js  Komponenten-Registry (Repos + Installationsregeln)
-  github.js      GitHub-Release-Abfrage (Cache, ETag, Token)
-  builder.js     Download, Entpacken, Abhängigkeits-Auflösung, Pack-Aufbau
-  hekate.js      Generator für bootloader/hekate_ipl.ini
-  sd.js          SD-Karten-Erkennung + Kopieren
-  devtest.js     Smoke-/UI-Tests (nur mit HATS_SMOKE=1 aktiv)
-renderer/        UI (HTML/CSS/JS, dunkles Theme) + icon.png
-tools/           make-icon.js – erzeugt build/icon.ico + renderer/icon.png
-build/           icon.ico (Windows-App-Icon)
-```
+**Hinweise:** Die SD-Karte sollte **FAT32** sein (die App warnt bei exFAT). Ein optionales,
+kostenloses **GitHub-Token** (Einstellungen) hebt das API-Limit von 60 auf 5.000 Abfragen/Stunde.
+Gedacht für eine bereits gemoddete Switch (Modchip oder RCM); `payload.bin` liegt automatisch im SD-Root.
