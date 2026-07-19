@@ -306,7 +306,6 @@ async function checkReleases(force) {
 const HEKATE_GENERAL = [
   { key: 'autoboot', type: 'select', nameKey: 'gen.autoboot', descKey: 'gen.autoboot.desc' },
   { key: 'bootwait', type: 'slider', min: 0, max: 20, unit: 's', nameKey: 'gen.bootwait', descKey: 'gen.bootwait.desc' },
-  { key: 'backlight', type: 'slider', min: 0, max: 200, unit: '', nameKey: 'gen.backlight', descKey: 'gen.backlight.desc' },
   { key: 'autonogc', type: 'toggle', nameKey: 'gen.autonogc', descKey: 'gen.autonogc.desc' },
   { key: 'autohosoff', type: 'toggle', nameKey: 'gen.autohosoff', descKey: 'gen.autohosoff.desc' },
   { key: 'updater2p', type: 'toggle', nameKey: 'gen.updater2p', descKey: 'gen.updater2p.desc' },

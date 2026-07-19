@@ -4,9 +4,8 @@
 // Referenz: https://github.com/CTCaer/hekate#hekate_iplini-configuration
 
 const DEFAULT_HEKATE = {
-  autoboot: '',       // '' = Boot-Menü anzeigen, sonst SCHLÜSSEL des Eintrags (z. B. 'stock')
+  autoboot: '',       // '' = Boot-Menü anzeigen, sonst SCHLÜSSEL des Eintrags (z. B. 'semistock')
   bootwait: 3,        // Sekunden, die das Boot-Logo angezeigt wird (0-20)
-  backlight: 100,     // Display-Helligkeit im Boot-Menü (0-200)
   autohosoff: false,  // Konsole komplett ausschalten statt Sleep, wenn per HOS ausgeschaltet
   autonogc: true,     // Gamecard-Slot automatisch schützen, wenn Firmware zu neu für Fuses
   updater2p: false,   // Hekate erlaubt Updates über bootloader/update.bin
@@ -96,7 +95,6 @@ function normalize(config) {
   c.entries = entries;
 
   c.bootwait = clampInt(c.bootwait, 0, 20, DEFAULT_HEKATE.bootwait);
-  c.backlight = clampInt(c.backlight, 0, 200, DEFAULT_HEKATE.backlight);
 
   // Autoboot wird intern als Eintrags-SCHLÜSSEL gespeichert (nicht als Position),
   // damit das Aktivieren/Deaktivieren anderer Einträge das Ziel nicht verschiebt.
@@ -127,7 +125,7 @@ function generateIni(config) {
     `autoboot=${autobootIndex}`,
     'autoboot_list=0',
     `bootwait=${c.bootwait}`,
-    `backlight=${c.backlight}`,
+    'backlight=100', // fester Hekate-Standard (Helligkeit nicht mehr einstellbar)
     `autohosoff=${bool(c.autohosoff)}`,
     `autonogc=${bool(c.autonogc)}`,
     `updater2p=${bool(c.updater2p)}`,
