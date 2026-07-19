@@ -181,6 +181,29 @@ const COMPONENTS = [
     },
     assets: [{ match: /^battery_desync_fix_v[\d.]+\.nro$/, action: 'copy', target: 'switch/battery_desync_fix.nro' }],
   },
+  {
+    id: 'themeinjector',
+    name: 'NXThemesInstaller',
+    repo: 'exelix11/SwitchThemeInjector',
+    category: 'apps',
+    description: {
+      de: 'Installiert Custom-Themes (.nxtheme) auf der Switch. Wird u. a. von Themezer-NX zum Installieren benötigt.',
+      en: 'Installs custom themes (.nxtheme) on the Switch. Required e.g. by Themezer-NX to install them.',
+    },
+    assets: [{ match: /^NXThemesInstaller\.nro$/, action: 'copy', target: 'switch/NXThemesInstaller.nro' }],
+  },
+  {
+    id: 'themezer',
+    name: 'Themezer-NX',
+    repo: 'suchmememanyskill/themezer-nx',
+    category: 'apps',
+    requires: ['themeinjector'],
+    description: {
+      de: 'Themes direkt von themezer.net auf der Switch durchsuchen und laden (Installation über NXThemesInstaller).',
+      en: 'Browse and download themes from themezer.net right on the Switch (installs via NXThemesInstaller).',
+    },
+    assets: [{ match: /^themezer-nx\.nro$/, action: 'copy', target: 'switch/themezer-nx.nro' }],
+  },
 
   // ── System-Module ────────────────────────────────────────────────────────
   {
