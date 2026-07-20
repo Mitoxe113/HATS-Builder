@@ -132,10 +132,15 @@ const COMPONENTS = [
     repo: 'rashevskyv/DBIPatcher',
     category: 'apps',
     description: {
-      de: 'Titel-/Save-Manager und Installer – englisch gepatchte Version von DBI.',
-      en: 'Title/save manager and installer – English-patched version of DBI.',
+      de: 'Titel-/Save-Manager und Installer – mit englischer Übersetzung (nach switch/DBI/).',
+      en: 'Title/save manager and installer – with English translation (to switch/DBI/).',
     },
-    assets: [{ match: /^DBI\.nro$/, action: 'copy', target: 'switch/DBI.nro' }],
+    // DBI.nro + translation_en.bin (umbenannt zu translation.bin) müssen im selben
+    // Ordner liegen, damit DBI in Englisch startet (laut DBIPatcher-Anleitung).
+    assets: [
+      { match: /^DBI\.nro$/, action: 'copy', target: 'switch/DBI/DBI.nro' },
+      { match: /^translation_en\.bin$/, action: 'copy', target: 'switch/DBI/translation.bin' },
+    ],
   },
   {
     id: 'sphaira',
