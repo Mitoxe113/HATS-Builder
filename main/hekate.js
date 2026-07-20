@@ -10,6 +10,8 @@ const DEFAULT_HEKATE = {
   autonogc: true,     // Gamecard-Slot automatisch schützen, wenn Firmware zu neu für Fuses
   updater2p: false,   // Hekate erlaubt Updates über bootloader/update.bin
   bootprotect: false, // Boot-Dateien vor Überschreiben schützen
+  blockNintendoEmu: true,  // Nintendo-Server blocken auf emuMMC (atmosphere/hosts/emummc.txt)
+  blockNintendoSys: false, // Nintendo-Server blocken auf sysMMC (atmosphere/hosts/sysmmc.txt)
   entries: {
     cfw_emu:   { enabled: true,  name: 'CFW (emuMMC)' },
     cfw_sys:   { enabled: false, name: 'CFW (sysMMC)' },
@@ -93,6 +95,10 @@ function normalize(config) {
     };
   }
   c.entries = entries;
+
+  const boolOr = (v, def) => (typeof v === 'boolean' ? v : def);
+  c.blockNintendoEmu = boolOr(config && config.blockNintendoEmu, DEFAULT_HEKATE.blockNintendoEmu);
+  c.blockNintendoSys = boolOr(config && config.blockNintendoSys, DEFAULT_HEKATE.blockNintendoSys);
 
   c.bootwait = clampInt(c.bootwait, 0, 20, DEFAULT_HEKATE.bootwait);
 

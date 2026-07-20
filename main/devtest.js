@@ -56,6 +56,12 @@ async function takeScreenshots(win, shotDir) {
     }
   }
 
+  // Hekate-Ansicht ist lang → zusätzlich ganz unten abbilden (Auto-NoGC, DNS-Block)
+  await click('.nav-item[data-view="hekate"]');
+  await win.webContents.executeJavaScript('document.querySelector(".main").scrollTop = document.querySelector(".main").scrollHeight; true');
+  await sleep(400);
+  await shot('view-hekate-bottom.png');
+
   // Einstellungen-Fenster + englische Ansicht
   await click('.nav-item[data-view="components"]');
   await win.webContents.executeJavaScript('document.querySelector(".main").scrollTop = 0; true');

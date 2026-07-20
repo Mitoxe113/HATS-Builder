@@ -468,9 +468,40 @@ function updateIniPreview() {
   }, 120);
 }
 
+const DNS_OPTIONS = [
+  { key: 'blockNintendoEmu', nameKey: 'dns.emu', descKey: 'dns.emu.desc' },
+  { key: 'blockNintendoSys', nameKey: 'dns.sys', descKey: 'dns.sys.desc' },
+];
+
+function renderDnsBlock() {
+  const host = $('#dns-block');
+  host.textContent = '';
+  for (const opt of DNS_OPTIONS) {
+    const row = el('div', 'setting-row');
+    const info = el('div', 'setting-info');
+    info.appendChild(el('div', 'setting-name', t(opt.nameKey)));
+    info.appendChild(el('div', 'setting-desc', t(opt.descKey)));
+    row.appendChild(info);
+
+    const toggleLabel = el('label', 'toggle');
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.checked = !!hekateConf()[opt.key];
+    checkbox.addEventListener('change', () => {
+      hekateConf()[opt.key] = checkbox.checked;
+      saveSettings();
+    });
+    toggleLabel.appendChild(checkbox);
+    toggleLabel.appendChild(el('span', 'toggle-track'));
+    row.appendChild(toggleLabel);
+    host.appendChild(row);
+  }
+}
+
 function renderHekate() {
   renderBootEntries();
   renderHekateGeneral();
+  renderDnsBlock();
   updateIniPreview();
 }
 

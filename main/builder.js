@@ -5,7 +5,8 @@ const path = require('path');
 const AdmZip = require('adm-zip');
 const { COMPONENTS } = require('./components');
 const github = require('./github');
-const { generateIni } = require('./hekate');
+const { generateIni, normalize } = require('./hekate');
+const { NINTENDO_BLOCK } = require('./hosts');
 const { mt } = require('./messages');
 
 // Marker-Datei: kennzeichnet einen von uns erstellten Pack-Ordner.
@@ -272,11 +273,23 @@ async function buildPack({ outputDir, selectedIds, hekateConfig }, emit) {
   // Hekate-Boot-Menü-Konfiguration schreiben
   step += 1;
   emit({ type: 'step', component: null, name: 'Hekate-Konfiguration', version: '', step, totalSteps });
+  const hk = normalize(hekateConfig);
   const bootloaderDir = path.join(outputDir, 'bootloader');
   fs.mkdirSync(bootloaderDir, { recursive: true });
-  fs.writeFileSync(path.join(bootloaderDir, 'hekate_ipl.ini'), generateIni(hekateConfig));
+  fs.writeFileSync(path.join(bootloaderDir, 'hekate_ipl.ini'), generateIni(hk));
   writtenFiles.push(path.join('bootloader', 'hekate_ipl.ini'));
   emit({ type: 'log', text: 'bootloader/hekate_ipl.ini geschrieben' });
+
+  // Nintendo-Server blocken (Atmosphère DNS-MITM, 90DNS-Liste)
+  const hostsDir = path.join(outputDir, 'atmosphere', 'hosts');
+  const writeHost = (file) => {
+    fs.mkdirSync(hostsDir, { recursive: true });
+    fs.writeFileSync(path.join(hostsDir, file), NINTENDO_BLOCK);
+    writtenFiles.push(path.join('atmosphere', 'hosts', file));
+    emit({ type: 'log', text: `atmosphere/hosts/${file} geschrieben (Nintendo-Server geblockt)` });
+  };
+  if (hk.blockNintendoEmu) writeHost('emummc.txt');
+  if (hk.blockNintendoSys) writeHost('sysmmc.txt');
 
   // Hotfix-Ordner, die Homebrew erwartet
   fs.mkdirSync(path.join(outputDir, 'switch'), { recursive: true });
