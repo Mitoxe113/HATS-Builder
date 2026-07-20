@@ -16,16 +16,16 @@ function getLang() {
 
 const M = {
   'err.tokenInvalid': {
-    de: 'GitHub-Token ungültig – bitte im Token-Feld prüfen oder leeren.',
-    en: 'GitHub token invalid – please check or clear it in the token field.',
+    de: 'GitHub-Token ungültig. Bitte im Token-Feld prüfen oder leeren.',
+    en: 'GitHub token invalid. Please check or clear it in the token field.',
   },
   'err.rateLimit': {
     de: 'GitHub-Rate-Limit erreicht{0}. Tipp: kostenloses GitHub-Token hinterlegen (5.000 statt 60 Abfragen/Stunde).',
     en: 'GitHub rate limit reached{0}. Tip: add a free GitHub token (5,000 instead of 60 requests/hour).',
   },
   'err.resetAt': {
-    de: ' – Reset um {0} Uhr',
-    en: ' – resets at {0}',
+    de: ', Reset um {0} Uhr',
+    en: ', resets at {0}',
   },
   'err.rejected403': {
     de: 'GitHub hat die Anfrage abgelehnt (403).',

@@ -546,7 +546,7 @@ function handleProgress(event) {
     const withinStep = event.total ? event.done / event.total : 0;
     const base = ((currentStep.step - 1 + withinStep * 0.9) / currentStep.totalSteps) * 100;
     setBuildProgress(base);
-    $('#progress-step-label').textContent = `${event.asset} – ${fmtBytes(event.done)}${event.total ? ` / ${fmtBytes(event.total)}` : ''}`;
+    $('#progress-step-label').textContent = `${event.asset}: ${fmtBytes(event.done)}${event.total ? ` / ${fmtBytes(event.total)}` : ''}`;
   } else if (event.type === 'sd-progress') {
     $('#sd-progress').hidden = false;
     $('#sd-progress-fill').style.width = `${(event.doneBytes / Math.max(1, event.totalBytes)) * 100}%`;

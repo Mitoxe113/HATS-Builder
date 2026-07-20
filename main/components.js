@@ -30,8 +30,8 @@ const COMPONENTS = [
     required: true,
     defaultOn: true,
     description: {
-      de: 'Die Custom Firmware selbst – inklusive Homebrew Loader und Homebrew-Menü.',
-      en: 'The custom firmware itself – including the Homebrew Loader and Homebrew menu.',
+      de: 'Die Custom Firmware selbst, inklusive Homebrew Loader und Homebrew-Menü.',
+      en: 'The custom firmware itself, including the Homebrew Loader and Homebrew menu.',
     },
     assets: [
       { match: /^atmosphere-.*\.zip$/, action: 'extract', target: '' },
@@ -77,8 +77,8 @@ const COMPONENTS = [
     category: 'apps',
     defaultOn: true,
     description: {
-      de: 'Spielstände sichern und wiederherstellen – das Standard-Tool für Save-Backups.',
-      en: 'Back up and restore save data – the standard tool for save backups.',
+      de: 'Spielstände sichern und wiederherstellen. Das Standard-Tool für Save-Backups.',
+      en: 'Back up and restore save data. The go-to tool for save backups.',
     },
     assets: [{ match: /^JKSV\.nro$/, action: 'copy', target: 'switch/JKSV.nro' }],
   },
@@ -88,8 +88,8 @@ const COMPONENTS = [
     repo: 'mtheall/ftpd',
     category: 'apps',
     description: {
-      de: 'FTP-Server auf der Switch – Dateien kabellos vom PC auf die SD-Karte übertragen.',
-      en: 'FTP server on the Switch – transfer files wirelessly from your PC to the SD card.',
+      de: 'FTP-Server für die Switch. Überträgt Dateien kabellos vom PC auf die SD-Karte.',
+      en: 'An FTP server for the Switch. Move files wirelessly from your PC to the SD card.',
     },
     assets: [{ match: /^ftpd\.nro$/, action: 'copy', target: 'switch/ftpd.nro' }],
   },
@@ -99,8 +99,8 @@ const COMPONENTS = [
     repo: 'joel16/NX-Shell',
     category: 'apps',
     description: {
-      de: 'Dateimanager für die Switch – Dateien direkt auf der Konsole verwalten.',
-      en: 'File manager for the Switch – manage files directly on the console.',
+      de: 'Dateimanager für die Switch. Verwaltet Dateien direkt auf der Konsole.',
+      en: 'A file manager for the Switch. Manage files right on the console.',
     },
     assets: [{ match: /^NX-Shell\.nro$/, action: 'copy', target: 'switch/NX-Shell.nro' }],
   },
@@ -132,8 +132,8 @@ const COMPONENTS = [
     repo: 'rashevskyv/DBIPatcher',
     category: 'apps',
     description: {
-      de: 'Titel-/Save-Manager und Installer – mit englischer Übersetzung (nach switch/DBI/).',
-      en: 'Title/save manager and installer – with English translation (to switch/DBI/).',
+      de: 'Titel- und Save-Manager samt Installer, mit englischer Übersetzung (nach switch/DBI/).',
+      en: 'Title and save manager plus installer, with the English translation (to switch/DBI/).',
     },
     // DBI.nro + translation_en.bin (umbenannt zu translation.bin) müssen im selben
     // Ordner liegen, damit DBI in Englisch startet (laut DBIPatcher-Anleitung).
@@ -217,8 +217,8 @@ const COMPONENTS = [
     repo: 'WerWolv/nx-ovlloader',
     category: 'sysmodules',
     description: {
-      de: 'Basis für alle Tesla-Overlays – wird von jedem Overlay benötigt.',
-      en: 'Base for all Tesla overlays – required by every overlay.',
+      de: 'Die Basis für alle Tesla-Overlays. Jedes Overlay braucht sie.',
+      en: 'The base for all Tesla overlays. Every overlay needs it.',
     },
     assets: [{ match: /^nx-ovlloader\.zip$/, action: 'extract', target: '' }],
   },
@@ -253,8 +253,8 @@ const COMPONENTS = [
     category: 'sysmodules',
     requires: ['ovlloader'],
     description: {
-      de: 'Amiibo-Emulation – virtuelle Amiibos erstellen und nutzen (inkl. Overlay).',
-      en: 'Amiibo emulation – create and use virtual amiibos (incl. overlay).',
+      de: 'Amiibo-Emulation. Erstelle und nutze virtuelle Amiibos, Overlay inklusive.',
+      en: 'Amiibo emulation. Create and use virtual amiibos, overlay included.',
     },
     assets: [{ match: /^emuiibo\.zip$/, action: 'extract', target: '', stripPrefix: 'SdOut/' }],
   },
@@ -400,8 +400,8 @@ const COMPONENTS = [
     branch: 'master',
     category: 'tools',
     description: {
-      de: 'Layout-Patches (Quelldateien) von exelix11 für Custom-Themes – landen unter /themes.',
-      en: 'Layout patches (source files) by exelix11 for custom themes – placed under /themes.',
+      de: 'Layout-Patches (Quelldateien) von exelix11 für Custom-Themes. Landen unter /themes.',
+      en: 'Layout patches (source files) by exelix11 for custom themes. They land under /themes.',
     },
     assets: [
       { match: /\.zip$/, action: 'extract', target: 'themes', stripPrefix: 'theme-patches-master/' },
@@ -413,7 +413,7 @@ const CATEGORIES = [
   {
     id: 'core',
     name: { de: 'Basis', en: 'Base' },
-    hint: { de: 'Pflicht – ohne diese beiden läuft nichts', en: 'Required – nothing works without these two' },
+    hint: { de: 'Pflicht. Ohne diese beiden läuft nichts.', en: 'Required. Nothing works without these two.' },
   },
   {
     id: 'apps',
@@ -429,8 +429,8 @@ const CATEGORIES = [
     id: 'overlays',
     name: { de: 'Tesla-Overlays', en: 'Tesla Overlays' },
     hint: {
-      de: 'Im Spiel aufrufbar – brauchen nx-ovlloader und ein Overlay-Menü',
-      en: 'Accessible in-game – require nx-ovlloader and an overlay menu',
+      de: 'Im Spiel aufrufbar. Brauchen nx-ovlloader und ein Overlay-Menü.',
+      en: 'Accessible in-game. They need nx-ovlloader and an overlay menu.',
     },
   },
   {
