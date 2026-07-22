@@ -1,0 +1,9 @@
+# Zeilenenden im Repo einheitlich als LF speichern, im Arbeitsverzeichnis
+# darf Windows weiterhin CRLF verwenden. Das beendet die Warnungen bei jedem Commit.
+* text=auto eol=lf
+
+# Binärdateien nie anfassen
+*.ico binary
+*.png binary
+*.exe binary
+*.bin binary

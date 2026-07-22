@@ -62,6 +62,9 @@ function applyI18n() {
   document.querySelectorAll('[data-i18n-ph]').forEach((n) => {
     n.placeholder = t(n.dataset.i18nPh);
   });
+  document.querySelectorAll('[data-i18n-aria]').forEach((n) => {
+    n.setAttribute('aria-label', t(n.dataset.i18nAria));
+  });
   document.querySelectorAll('.lang-opt').forEach((b) => {
     b.classList.toggle('active', b.dataset.lang === state.lang);
   });
@@ -820,7 +823,8 @@ async function main() {
   // ... und still nachsehen, ob es eine neuere HATS-Builder-Version gibt
   checkForUpdate();
 
-  window.__APP_STATE__ = state; // Debug-/Test-Zugriff
+  // Zustand nur im Testlauf nach außen geben, nicht in der Release-Version
+  if (data.testMode) window.__APP_STATE__ = state;
   window.__APP_READY__ = true;
 }
 

@@ -1,11 +1,16 @@
 {
   "name": "hats-builder",
   "productName": "HATS Builder",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "Nintendo Switch CFW-Pack-Builder, offizielle Releases direkt von den Entwicklern, fertig für die SD-Karte",
   "main": "main/main.js",
   "author": "Marco",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Mitoxe113/HATS-Builder.git"
+  },
+  "homepage": "https://github.com/Mitoxe113/HATS-Builder",
   "scripts": {
     "start": "electron .",
     "dist": "electron-builder --win"

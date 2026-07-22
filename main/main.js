@@ -125,6 +125,8 @@ function registerIpc() {
     ),
     settings: loadSettings(),
     version: app.getVersion(),
+    // Nur im Testlauf: erlaubt dem Renderer, seinen Zustand nach außen zu geben
+    testMode: Boolean(process.env.HATS_SMOKE),
   }));
 
   ipcMain.handle('settings:save', (_e, partial) => {
