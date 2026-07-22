@@ -70,6 +70,7 @@ function applyI18n() {
     const sv = $('#settings-version');
     if (sv) sv.textContent = t('settings.version', state.appVersion);
   }
+  renderUpdateButton();
 }
 
 function setLanguage(lang) {
@@ -382,7 +383,7 @@ function renderBootEntries() {
 }
 
 function renderAutobootOptions() {
-  const select = $('#autoboot-select');
+  const select = $('#setting-autoboot');
   if (!select) return;
   select.textContent = '';
   const optMenu = el('option', null, t('autoboot.showMenu'));
@@ -409,7 +410,7 @@ function buildControl(setting, afterChange) {
 
   if (setting.type === 'select') {
     const select = document.createElement('select');
-    select.id = 'autoboot-select';
+    select.id = `setting-${setting.key}`; // eindeutig, auch bei mehreren Auswahlfeldern
     // Wert ist ein Eintrags-Schlüssel oder '' für das Menü
     select.addEventListener('change', () => commit(select.value));
     return select;
@@ -545,7 +546,10 @@ function handleProgress(event) {
     setBuildProgress(base);
     $('#progress-step-label').textContent = `${event.asset}: ${fmtBytes(event.done)}${event.total ? ` / ${fmtBytes(event.total)}` : ''}`;
   } else if (event.type === 'update-progress') {
-    $('#update-text').textContent = t('update.downloading', fmtBytes(event.done), fmtBytes(event.total));
+    // Ohne content-length ist die Gesamtgröße unbekannt, dann nur das Geladene zeigen
+    $('#update-text').textContent = event.total
+      ? t('update.downloading', fmtBytes(event.done), fmtBytes(event.total))
+      : fmtBytes(event.done);
   } else if (event.type === 'sd-progress') {
     $('#sd-progress').hidden = false;
     $('#sd-progress-fill').style.width = `${(event.doneBytes / Math.max(1, event.totalBytes)) * 100}%`;
@@ -665,6 +669,15 @@ async function copyToDrive(drive, btn) {
 
 // ── Selbst-Update ────────────────────────────────────────────────────────────
 let updateInfo = null;
+let updateFile = null; // Pfad der bereits heruntergeladenen Datei
+
+// Der Knopf hat zwei Zustände: zuerst herunterladen, danach Ordner öffnen.
+// Die Beschriftung wird hier gesetzt statt über data-i18n, damit ein
+// Sprachwechsel sie nicht auf "Herunterladen" zurücksetzt.
+function renderUpdateButton() {
+  const btn = $('#btn-update-download');
+  if (btn) btn.textContent = updateFile ? t('update.openFolder') : t('update.download');
+}
 
 // Prüft, ob eine neuere Version von HATS Builder vorliegt.
 // silent: nur das Banner zeigen, keine Rückmeldung in den Einstellungen.
@@ -680,9 +693,12 @@ async function checkForUpdate({ silent = true } = {}) {
   }
 
   if (info && info.available) {
+    // Bei einer anderen Version ist ein früher geladener Stand hinfällig
+    if (!updateInfo || updateInfo.latest !== info.latest) updateFile = null;
     updateInfo = info;
     $('#update-text').textContent = t('update.available', info.latest, info.current);
     $('#btn-update-download').hidden = !info.asset;
+    renderUpdateButton();
     $('#update-banner').hidden = false;
     if (!silent) status.textContent = t('update.available', info.latest, info.current);
     return;
@@ -690,18 +706,21 @@ async function checkForUpdate({ silent = true } = {}) {
   if (!silent) status.textContent = info && info.error ? t('update.failed') : t('update.upToDate');
 }
 
-async function downloadUpdate() {
+// Ein einziger Handler für beide Zustände. Früher hingen hier zwei Handler
+// gleichzeitig, wodurch "Ordner öffnen" den Download erneut angestoßen hat.
+async function onUpdateButton() {
+  if (updateFile) {
+    api.revealFile(updateFile);
+    return;
+  }
   if (!updateInfo || !updateInfo.asset) return;
+
   const btn = $('#btn-update-download');
   btn.disabled = true;
   try {
-    const file = await api.downloadUpdate(updateInfo.asset);
+    updateFile = await api.downloadUpdate(updateInfo.asset);
     $('#update-text').textContent = t('update.ready', updateInfo.asset.name);
-    // Knopf wird zum Ordner-Öffnen. data-i18n entfernen, damit ein späterer
-    // Sprachwechsel die Beschriftung nicht wieder überschreibt.
-    btn.removeAttribute('data-i18n');
-    btn.textContent = t('update.openFolder');
-    btn.onclick = () => api.revealFile(file);
+    renderUpdateButton();
   } catch (err) {
     toast(err.message, 'error', 9000);
   } finally {
@@ -787,7 +806,7 @@ async function main() {
     }
   });
 
-  $('#btn-update-download').addEventListener('click', downloadUpdate);
+  $('#btn-update-download').addEventListener('click', onUpdateButton);
   $('#btn-update-notes').addEventListener('click', () => {
     if (updateInfo && updateInfo.url) api.openExternal(updateInfo.url);
   });

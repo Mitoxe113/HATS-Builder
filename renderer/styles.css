@@ -126,7 +126,9 @@ code { font-family: var(--mono); font-size: 0.9em; color: var(--accent-2); }
 /* ── Update-Banner ─────────────────────────────────────────────────────── */
 .update-banner {
   display: flex; align-items: center; gap: 12px;
-  padding: 12px 16px; margin-bottom: 18px;
+  /* gleiche Breite wie der zentrierte Inhalt der Ansichten */
+  max-width: 1060px; margin: 0 auto 18px;
+  padding: 12px 16px;
   border-radius: var(--radius-sm);
   border: 1px solid rgba(61, 220, 132, 0.35);
   background: var(--green-soft);

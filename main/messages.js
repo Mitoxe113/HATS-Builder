@@ -80,6 +80,10 @@ const M = {
     de: 'Es läuft bereits ein Kopiervorgang.',
     en: 'A copy is already in progress.',
   },
+  'err.badUpdateUrl': {
+    de: 'Unerwartete Download-Adresse, das Update wurde abgebrochen.',
+    en: 'Unexpected download address, the update was cancelled.',
+  },
   'err.updateRunning': {
     de: 'Das Update wird bereits heruntergeladen.',
     en: 'The update is already downloading.',

@@ -55,8 +55,15 @@ async function check(currentVersion, portable) {
   };
 }
 
+// Die geladene Datei ist eine EXE, die der Nutzer danach ausführt. Deshalb wird
+// hier abgesichert, dass die Adresse wirklich von GitHub stammt.
+const GITHUB_URL = /^https:\/\/([a-z0-9-]+\.)*(github\.com|githubusercontent\.com)\//i;
+
 // Lädt die Update-Datei nach targetDir und meldet den Fortschritt.
 async function download(asset, targetDir, emit) {
+  if (!asset || !GITHUB_URL.test(String(asset.url || ''))) {
+    throw new Error(mt('err.badUpdateUrl'));
+  }
   fs.mkdirSync(targetDir, { recursive: true });
   const dest = path.join(targetDir, path.basename(asset.name));
   const tmp = `${dest}.part`;
