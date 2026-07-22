@@ -27,7 +27,7 @@ window.I18N = {
     'token.title': 'GitHub-Token',
     'token.optional': 'optional',
     'token.hint':
-      'Ohne Anmeldung erlaubt GitHub nur 60 Versions-Abfragen pro Stunde. Danach erscheint „Rate-Limit erreicht“. Mit einem kostenlosen Token (dafür brauchst du keine Berechtigungen) sind es 5.000. Der Token bleibt nur lokal auf diesem PC.',
+      'Ohne Token erlaubt GitHub nur 60 Abfragen pro Stunde, mit einem kostenlosen 5.000. Berechtigungen braucht er keine, und er bleibt nur auf diesem PC.',
     'token.placeholder': 'ghp_… oder github_pat_…',
     'token.save': 'Speichern',
     'token.create': 'Token erstellen',
@@ -148,7 +148,7 @@ window.I18N = {
     'token.title': 'GitHub token',
     'token.optional': 'optional',
     'token.hint':
-      'Without signing in, GitHub only allows 60 version checks per hour. After that you get "rate limit reached". A free token (you don\'t need any permissions) raises this to 5,000. The token stays on this PC only.',
+      "Without a token GitHub allows only 60 requests per hour, with a free one it's 5,000. It needs no permissions and stays on this PC.",
     'token.placeholder': 'ghp_… or github_pat_…',
     'token.save': 'Save',
     'token.create': 'Create token',

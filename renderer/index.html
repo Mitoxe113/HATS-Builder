@@ -76,16 +76,6 @@
         </header>
         <div class="release-status" id="release-status"></div>
         <div id="component-sections"></div>
-
-        <div class="card">
-          <h2 class="card-title"><span data-i18n="token.title">GitHub-Token</span> <span class="mono-badge" data-i18n="token.optional">optional</span></h2>
-          <p class="card-hint" data-i18n="token.hint">Ohne Anmeldung erlaubt GitHub nur 60 Versions-Abfragen pro Stunde. Danach erscheint „Rate-Limit erreicht“. Mit einem kostenlosen Token (dafür brauchst du keine Berechtigungen) sind es 5.000. Der Token bleibt nur lokal auf diesem PC.</p>
-          <div class="token-row">
-            <input type="password" id="github-token" data-i18n-ph="token.placeholder" placeholder="ghp_… oder github_pat_…" spellcheck="false" autocomplete="off" />
-            <button class="btn btn-secondary" id="btn-save-token" data-i18n="token.save">Speichern</button>
-            <button class="btn btn-ghost" id="btn-token-help" data-i18n="token.create">Token erstellen</button>
-          </div>
-        </div>
       </section>
 
       <!-- Hekate-Config -->
@@ -203,6 +193,18 @@
           <div class="setting-block-label" data-i18n="settings.updates">Updates</div>
           <button class="btn btn-secondary" id="btn-check-update" data-i18n="update.check">Nach Updates suchen</button>
           <div class="settings-update-status" id="update-status"></div>
+        </div>
+
+        <div class="setting-block">
+          <div class="setting-block-label">
+            <span data-i18n="token.title">GitHub-Token</span> <span class="mono-badge" data-i18n="token.optional">optional</span>
+          </div>
+          <p class="settings-hint" data-i18n="token.hint">Ohne Token erlaubt GitHub nur 60 Abfragen pro Stunde, mit Token 5.000. Er bleibt nur auf diesem PC.</p>
+          <input type="password" id="github-token" data-i18n-ph="token.placeholder" placeholder="ghp_… oder github_pat_…" spellcheck="false" autocomplete="off" />
+          <div class="token-actions">
+            <button class="btn btn-secondary" id="btn-save-token" data-i18n="token.save">Speichern</button>
+            <button class="btn btn-ghost" id="btn-token-help" data-i18n="token.create">Token erstellen</button>
+          </div>
         </div>
         <div class="settings-info">
           <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
