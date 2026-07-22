@@ -14,6 +14,9 @@ contextBridge.exposeInMainWorld('api', {
   copyToDrive: (args) => ipcRenderer.invoke('sd:copy', args),
   openExternal: (url) => ipcRenderer.invoke('shell:openExternal', url),
   openPath: (dir) => ipcRenderer.invoke('shell:openPath', dir),
+  checkUpdate: () => ipcRenderer.invoke('update:check'),
+  downloadUpdate: (asset) => ipcRenderer.invoke('update:download', asset),
+  revealFile: (file) => ipcRenderer.invoke('update:reveal', file),
   onProgress: (callback) => {
     ipcRenderer.on('progress', (_e, event) => callback(event));
   },

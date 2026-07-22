@@ -7,6 +7,7 @@ const { COMPONENTS, CATEGORIES } = require('./components');
 const github = require('./github');
 const builder = require('./builder');
 const sd = require('./sd');
+const updater = require('./updater');
 const messages = require('./messages');
 const { mt } = messages;
 const { DEFAULT_HEKATE, ENTRY_ORDER, ENTRY_TEMPLATES, generateIni, normalize } = require('./hekate');
@@ -14,6 +15,7 @@ const { DEFAULT_HEKATE, ENTRY_ORDER, ENTRY_TEMPLATES, generateIni, normalize } =
 let win = null;
 let building = false;
 let copying = false;
+let downloadingUpdate = false;
 
 // ── Einstellungen (persistiert in userData/settings.json) ───────────────────
 function settingsPath() {
@@ -189,6 +191,30 @@ function registerIpc() {
     } finally {
       copying = false;
     }
+  });
+
+  // ── Selbst-Update ─────────────────────────────────────────────────────────
+  ipcMain.handle('update:check', async () => {
+    try {
+      return await updater.check(app.getVersion(), Boolean(process.env.PORTABLE_EXECUTABLE_DIR));
+    } catch (err) {
+      // Kein Netz, privates Repo ohne Token o. Ä.: leise scheitern, kein Banner
+      return { available: false, error: err.message };
+    }
+  });
+
+  ipcMain.handle('update:download', async (_e, asset) => {
+    if (downloadingUpdate) throw new Error(mt('err.updateRunning'));
+    downloadingUpdate = true;
+    try {
+      return await updater.download(asset, app.getPath('downloads'), sendProgress);
+    } finally {
+      downloadingUpdate = false;
+    }
+  });
+
+  ipcMain.handle('update:reveal', (_e, file) => {
+    if (file && fs.existsSync(file)) shell.showItemInFolder(file);
   });
 
   ipcMain.handle('shell:openExternal', (_e, url) => {

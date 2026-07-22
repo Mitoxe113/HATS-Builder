@@ -2,7 +2,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const { mt, getLang } = require('./messages');
+const { mt, getLocale } = require('./messages');
 
 // Holt das jeweils neueste offizielle Release eines Repos über die GitHub-API.
 //
@@ -89,7 +89,7 @@ function checkStatus(res) {
     if (res.headers.get('x-ratelimit-remaining') === '0') {
       const reset = Number(res.headers.get('x-ratelimit-reset'));
       const time = reset
-        ? new Date(reset * 1000).toLocaleTimeString(getLang() === 'en' ? 'en-GB' : 'de-DE', {
+        ? new Date(reset * 1000).toLocaleTimeString(getLocale(), {
             hour: '2-digit',
             minute: '2-digit',
           })

@@ -26,6 +26,15 @@ const el = (tag, cls, text) => {
 };
 
 // ── Übersetzung ─────────────────────────────────────────────────────────────
+// Unterstützte Sprachen an einer Stelle. Eine weitere Sprache braucht nur einen
+// Eintrag hier plus die Texte in i18n.js und main/messages.js.
+const LANGS = [
+  { code: 'de', label: 'Deutsch', locale: 'de-DE' },
+  { code: 'en', label: 'English', locale: 'en-GB' },
+];
+const isLang = (code) => LANGS.some((l) => l.code === code);
+const localeOf = (code) => (LANGS.find((l) => l.code === code) || LANGS[0]).locale;
+
 function t(key, ...args) {
   const dict = window.I18N[state.lang] || window.I18N.de;
   let s = dict[key] != null ? dict[key] : window.I18N.de[key] != null ? window.I18N.de[key] : key;
@@ -64,7 +73,7 @@ function applyI18n() {
 }
 
 function setLanguage(lang) {
-  if ((lang !== 'de' && lang !== 'en') || lang === state.lang) return;
+  if (!isLang(lang) || lang === state.lang) return;
   state.lang = lang;
   state.settings.language = lang;
   saveSettings();
@@ -92,8 +101,7 @@ function fmtBytes(bytes) {
 
 function fmtDate(iso) {
   if (!iso) return '';
-  const locale = state.lang === 'en' ? 'en-GB' : 'de-DE';
-  return new Date(iso).toLocaleDateString(locale, { day: '2-digit', month: 'short', year: 'numeric' });
+  return new Date(iso).toLocaleDateString(localeOf(state.lang), { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
 function saveSettings() {
@@ -390,58 +398,67 @@ function renderAutobootOptions() {
   select.value = hekateConf().autoboot || '';
 }
 
-function renderHekateGeneral() {
-  const host = $('#hekate-general');
+// Baut das Bedienelement einer Einstellungs-Zeile: Auswahl, Regler oder Schalter.
+// Jede Änderung schreibt in die Hekate-Config, speichert und ruft afterChange.
+function buildControl(setting, afterChange) {
+  const commit = (value) => {
+    hekateConf()[setting.key] = value;
+    saveSettings();
+    if (afterChange) afterChange();
+  };
+
+  if (setting.type === 'select') {
+    const select = document.createElement('select');
+    select.id = 'autoboot-select';
+    // Wert ist ein Eintrags-Schlüssel oder '' für das Menü
+    select.addEventListener('change', () => commit(select.value));
+    return select;
+  }
+
+  if (setting.type === 'slider') {
+    const wrap = el('div', 'slider-wrap');
+    const slider = document.createElement('input');
+    slider.type = 'range';
+    slider.min = setting.min;
+    slider.max = setting.max;
+    slider.value = hekateConf()[setting.key];
+    const value = el('span', 'slider-value', `${slider.value}${setting.unit}`);
+    slider.addEventListener('input', () => {
+      value.textContent = `${slider.value}${setting.unit}`;
+      commit(Number(slider.value));
+    });
+    wrap.appendChild(slider);
+    wrap.appendChild(value);
+    return wrap;
+  }
+
+  const toggleLabel = el('label', 'toggle');
+  const checkbox = document.createElement('input');
+  checkbox.type = 'checkbox';
+  checkbox.checked = Boolean(hekateConf()[setting.key]);
+  checkbox.addEventListener('change', () => commit(checkbox.checked));
+  toggleLabel.appendChild(checkbox);
+  toggleLabel.appendChild(el('span', 'toggle-track'));
+  return toggleLabel;
+}
+
+// Rendert eine Gruppe von Einstellungen als Zeilen mit Name, Beschreibung und
+// Bedienelement. Eine neue Gruppe braucht damit nur eine Liste und diesen Aufruf.
+function renderSettingRows(host, settings, afterChange) {
   host.textContent = '';
-  for (const setting of HEKATE_GENERAL) {
+  for (const setting of settings) {
     const row = el('div', 'setting-row');
     const info = el('div', 'setting-info');
     info.appendChild(el('div', 'setting-name', t(setting.nameKey)));
     info.appendChild(el('div', 'setting-desc', t(setting.descKey)));
     row.appendChild(info);
-
-    if (setting.type === 'select') {
-      const select = document.createElement('select');
-      select.id = 'autoboot-select';
-      select.addEventListener('change', () => {
-        hekateConf().autoboot = select.value; // Eintrags-Schlüssel oder '' (Menü)
-        saveSettings();
-        updateIniPreview();
-      });
-      row.appendChild(select);
-    } else if (setting.type === 'slider') {
-      const wrap = el('div', 'slider-wrap');
-      const slider = document.createElement('input');
-      slider.type = 'range';
-      slider.min = setting.min;
-      slider.max = setting.max;
-      slider.value = hekateConf()[setting.key];
-      const value = el('span', 'slider-value', `${slider.value}${setting.unit}`);
-      slider.addEventListener('input', () => {
-        hekateConf()[setting.key] = Number(slider.value);
-        value.textContent = `${slider.value}${setting.unit}`;
-        saveSettings();
-        updateIniPreview();
-      });
-      wrap.appendChild(slider);
-      wrap.appendChild(value);
-      row.appendChild(wrap);
-    } else {
-      const toggleLabel = el('label', 'toggle');
-      const checkbox = document.createElement('input');
-      checkbox.type = 'checkbox';
-      checkbox.checked = !!hekateConf()[setting.key];
-      checkbox.addEventListener('change', () => {
-        hekateConf()[setting.key] = checkbox.checked;
-        saveSettings();
-        updateIniPreview();
-      });
-      toggleLabel.appendChild(checkbox);
-      toggleLabel.appendChild(el('span', 'toggle-track'));
-      row.appendChild(toggleLabel);
-    }
+    row.appendChild(buildControl(setting, afterChange));
     host.appendChild(row);
   }
+}
+
+function renderHekateGeneral() {
+  renderSettingRows($('#hekate-general'), HEKATE_GENERAL, updateIniPreview);
   renderAutobootOptions();
 }
 
@@ -474,28 +491,8 @@ const DNS_OPTIONS = [
 ];
 
 function renderDnsBlock() {
-  const host = $('#dns-block');
-  host.textContent = '';
-  for (const opt of DNS_OPTIONS) {
-    const row = el('div', 'setting-row');
-    const info = el('div', 'setting-info');
-    info.appendChild(el('div', 'setting-name', t(opt.nameKey)));
-    info.appendChild(el('div', 'setting-desc', t(opt.descKey)));
-    row.appendChild(info);
-
-    const toggleLabel = el('label', 'toggle');
-    const checkbox = document.createElement('input');
-    checkbox.type = 'checkbox';
-    checkbox.checked = !!hekateConf()[opt.key];
-    checkbox.addEventListener('change', () => {
-      hekateConf()[opt.key] = checkbox.checked;
-      saveSettings();
-    });
-    toggleLabel.appendChild(checkbox);
-    toggleLabel.appendChild(el('span', 'toggle-track'));
-    row.appendChild(toggleLabel);
-    host.appendChild(row);
-  }
+  // Diese Schalter landen nicht in der INI, daher keine Vorschau-Aktualisierung
+  renderSettingRows($('#dns-block'), DNS_OPTIONS);
 }
 
 function renderHekate() {
@@ -547,6 +544,8 @@ function handleProgress(event) {
     const base = ((currentStep.step - 1 + withinStep * 0.9) / currentStep.totalSteps) * 100;
     setBuildProgress(base);
     $('#progress-step-label').textContent = `${event.asset}: ${fmtBytes(event.done)}${event.total ? ` / ${fmtBytes(event.total)}` : ''}`;
+  } else if (event.type === 'update-progress') {
+    $('#update-text').textContent = t('update.downloading', fmtBytes(event.done), fmtBytes(event.total));
   } else if (event.type === 'sd-progress') {
     $('#sd-progress').hidden = false;
     $('#sd-progress-fill').style.width = `${(event.doneBytes / Math.max(1, event.totalBytes)) * 100}%`;
@@ -664,8 +663,67 @@ async function copyToDrive(drive, btn) {
   }
 }
 
+// ── Selbst-Update ────────────────────────────────────────────────────────────
+let updateInfo = null;
+
+// Prüft, ob eine neuere Version von HATS Builder vorliegt.
+// silent: nur das Banner zeigen, keine Rückmeldung in den Einstellungen.
+async function checkForUpdate({ silent = true } = {}) {
+  const status = $('#update-status');
+  if (!silent) status.textContent = t('update.checking');
+
+  let info = null;
+  try {
+    info = await api.checkUpdate();
+  } catch {
+    info = { available: false, error: 'ipc' };
+  }
+
+  if (info && info.available) {
+    updateInfo = info;
+    $('#update-text').textContent = t('update.available', info.latest, info.current);
+    $('#btn-update-download').hidden = !info.asset;
+    $('#update-banner').hidden = false;
+    if (!silent) status.textContent = t('update.available', info.latest, info.current);
+    return;
+  }
+  if (!silent) status.textContent = info && info.error ? t('update.failed') : t('update.upToDate');
+}
+
+async function downloadUpdate() {
+  if (!updateInfo || !updateInfo.asset) return;
+  const btn = $('#btn-update-download');
+  btn.disabled = true;
+  try {
+    const file = await api.downloadUpdate(updateInfo.asset);
+    $('#update-text').textContent = t('update.ready', updateInfo.asset.name);
+    // Knopf wird zum Ordner-Öffnen. data-i18n entfernen, damit ein späterer
+    // Sprachwechsel die Beschriftung nicht wieder überschreibt.
+    btn.removeAttribute('data-i18n');
+    btn.textContent = t('update.openFolder');
+    btn.onclick = () => api.revealFile(file);
+  } catch (err) {
+    toast(err.message, 'error', 9000);
+  } finally {
+    btn.disabled = false;
+  }
+}
+
 // ── Einstellungen-Fenster ────────────────────────────────────────────────────
+function renderLangButtons() {
+  const host = $('#lang-toggle');
+  host.textContent = '';
+  for (const lang of LANGS) {
+    const btn = el('button', 'lang-opt', lang.label);
+    btn.dataset.lang = lang.code;
+    btn.classList.toggle('active', lang.code === state.lang);
+    btn.addEventListener('click', () => setLanguage(lang.code));
+    host.appendChild(btn);
+  }
+}
+
 function initSettingsModal() {
+  renderLangButtons();
   const modal = $('#settings-modal');
   const open = () => {
     modal.hidden = false;
@@ -681,9 +739,6 @@ function initSettingsModal() {
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && !modal.hidden) close();
   });
-  document.querySelectorAll('.lang-opt').forEach((b) => {
-    b.addEventListener('click', () => setLanguage(b.dataset.lang));
-  });
 }
 
 // ── Initialisierung ─────────────────────────────────────────────────────────
@@ -695,7 +750,7 @@ async function main() {
   state.entryHints = data.entryHints;
   state.settings = data.settings;
   state.appVersion = data.version;
-  state.lang = data.settings.language === 'en' ? 'en' : 'de';
+  state.lang = isLang(data.settings.language) ? data.settings.language : LANGS[0].code;
 
   applyI18n();
   initNav();
@@ -732,8 +787,19 @@ async function main() {
     }
   });
 
+  $('#btn-update-download').addEventListener('click', downloadUpdate);
+  $('#btn-update-notes').addEventListener('click', () => {
+    if (updateInfo && updateInfo.url) api.openExternal(updateInfo.url);
+  });
+  $('#btn-update-later').addEventListener('click', () => {
+    $('#update-banner').hidden = true;
+  });
+  $('#btn-check-update').addEventListener('click', () => checkForUpdate({ silent: false }));
+
   // Beim Start automatisch die aktuellen Versionen laden (aus Cache oder GitHub)
   checkReleases(false);
+  // ... und still nachsehen, ob es eine neuere HATS-Builder-Version gibt
+  checkForUpdate();
 
   window.__APP_STATE__ = state; // Debug-/Test-Zugriff
   window.__APP_READY__ = true;

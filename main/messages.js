@@ -4,14 +4,23 @@
 // Renderer angezeigt werden). Die aktive Sprache wird von main.js aus den
 // Einstellungen gesetzt (setLang) und bei Sprachwechsel aktualisiert.
 
-let lang = 'de';
+// Unterstützte Sprachen und die Locale für Datums- und Zeitformate.
+// Eine weitere Sprache braucht hier nur einen Eintrag mehr.
+const LOCALES = { de: 'de-DE', en: 'en-GB' };
+const FALLBACK = 'de';
 
-function setLang(l) {
-  lang = l === 'en' ? 'en' : 'de';
+let lang = FALLBACK;
+
+function setLang(value) {
+  lang = LOCALES[value] ? value : FALLBACK;
 }
 
 function getLang() {
   return lang;
+}
+
+function getLocale() {
+  return LOCALES[lang] || LOCALES[FALLBACK];
 }
 
 const M = {
@@ -71,6 +80,10 @@ const M = {
     de: 'Es läuft bereits ein Kopiervorgang.',
     en: 'A copy is already in progress.',
   },
+  'err.updateRunning': {
+    de: 'Das Update wird bereits heruntergeladen.',
+    en: 'The update is already downloading.',
+  },
   'err.noPack': {
     de: 'Im Zielordner liegt kein fertiges Pack. Bitte zuerst das Pack erstellen.',
     en: 'There is no finished pack in the target folder. Please create the pack first.',
@@ -79,11 +92,11 @@ const M = {
 
 function mt(key, ...args) {
   const entry = M[key];
-  let s = entry ? entry[lang] || entry.de : key;
+  let s = entry ? entry[lang] || entry[FALLBACK] : key;
   args.forEach((a, i) => {
     s = s.split(`{${i}}`).join(String(a));
   });
   return s;
 }
 
-module.exports = { setLang, getLang, mt };
+module.exports = { setLang, getLang, getLocale, mt };

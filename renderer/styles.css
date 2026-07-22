@@ -123,6 +123,25 @@ code { font-family: var(--mono); font-size: 0.9em; color: var(--accent-2); }
 .settings-btn svg { flex-shrink: 0; }
 .version { text-align: center; color: var(--text-faint); font-size: 11px; }
 
+/* ── Update-Banner ─────────────────────────────────────────────────────── */
+.update-banner {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 16px; margin-bottom: 18px;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(61, 220, 132, 0.35);
+  background: var(--green-soft);
+  color: var(--green);
+  font-size: 13px;
+  animation: fadeIn 0.2s ease;
+}
+.update-banner[hidden] { display: none; }
+.update-banner > svg { flex-shrink: 0; }
+.update-text { flex: 1; min-width: 0; }
+.update-actions { display: flex; gap: 8px; flex-shrink: 0; }
+.update-actions .btn { padding: 7px 13px; font-size: 12.5px; }
+
+.settings-update-status { color: var(--text-dim); font-size: 12px; margin-top: 9px; min-height: 16px; }
+
 /* ── Modal / Einstellungen ─────────────────────────────────────────────── */
 .modal-overlay {
   position: fixed; inset: 0;
