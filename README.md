@@ -1,6 +1,6 @@
 # HATS Builder
 
-<details open>
+<details>
 <summary><b>🇩🇪 Deutsch</b></summary>
 
 <br>
