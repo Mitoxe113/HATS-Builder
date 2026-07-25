@@ -98,11 +98,13 @@ function safeJoin(base, ...parts) {
   return target;
 }
 
-// Wendet eine Asset-Regel an und liefert die Liste der geschriebenen Dateien
-// (relativ zu outputDir) zurück – damit spätere Builds gezielt nur unsere
-// Dateien wieder entfernen können.
-function applyAsset(rule, filePath, outputDir) {
-  const written = [];
+// Wendet eine Asset-Regel an und trägt jede geschriebene Datei (relativ zu
+// outputDir) in "written" ein, damit spätere Builds gezielt nur unsere Dateien
+// wieder entfernen können. Der Aufrufer gibt seine Sammelliste mit, denn bricht
+// das Entpacken mittendrin ab, müssen die bis dahin geschriebenen Dateien
+// trotzdem im Marker landen. Sonst blieben sie für immer als Reste liegen.
+function applyAsset(rule, filePath, outputDir, written = []) {
+  const vorher = written.length;
   if (rule.action === 'extract') {
     const zip = new AdmZip(filePath);
     for (const entry of zip.getEntries()) {
@@ -119,7 +121,7 @@ function applyAsset(rule, filePath, outputDir) {
       fs.writeFileSync(outPath, entry.getData());
       written.push(path.relative(outputDir, outPath));
     }
-    if (rule.stripPrefix && written.length === 0) {
+    if (rule.stripPrefix && written.length === vorher) {
       throw new Error(mt('err.stripMissing', rule.stripPrefix));
     }
   } else {
@@ -134,7 +136,15 @@ function applyAsset(rule, filePath, outputDir) {
 // Entfernt (bottom-up) leere Ordner innerhalb von root, aber niemals root selbst.
 function pruneEmptyDirs(root) {
   const walk = (dir) => {
-    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    // Auch das Lesen kann scheitern, etwa wenn ein Virenscanner den Ordner
+    // kurz sperrt. Aufräumen ist Kür, ein Fehler darf den Build nicht kippen.
+    let entries;
+    try {
+      entries = fs.readdirSync(dir, { withFileTypes: true });
+    } catch {
+      return;
+    }
+    for (const entry of entries) {
       if (!entry.isDirectory()) continue;
       const sub = path.join(dir, entry.name);
       walk(sub);
@@ -148,7 +158,11 @@ function pruneEmptyDirs(root) {
   walk(root);
 }
 
+// Liefert die Dateien zurück, die sich nicht löschen ließen. Der Aufrufer
+// schleppt sie im neuen Marker weiter mit, damit sie beim nächsten Versuch
+// erneut drankommen statt als unsichtbarer Rest liegen zu bleiben.
 function preparePackDir(outputDir) {
+  const uebrig = [];
   if (fs.existsSync(outputDir)) {
     const entries = fs.readdirSync(outputDir);
     if (entries.length > 0) {
@@ -166,14 +180,19 @@ function preparePackDir(outputDir) {
           } catch {
             /* bereits weg → egal */
           }
+          if (fs.existsSync(p)) uebrig.push(rel);
         }
-        fs.rmSync(path.join(outputDir, MARKER), { force: true });
         pruneEmptyDirs(outputDir);
+        // Der Marker geht bewusst zuletzt. Scheitert vorher etwas, bleibt er
+        // mit seiner Dateiliste liegen und der nächste Versuch räumt weiter
+        // auf, statt den Ordner für fremd zu halten.
+        fs.rmSync(path.join(outputDir, MARKER), { force: true });
       }
       // Alter Marker ohne Dateiliste: nichts löschen, neue Dateien überschreiben.
     }
   }
   fs.mkdirSync(outputDir, { recursive: true });
+  return uebrig;
 }
 
 function dirStats(dir) {
@@ -231,13 +250,14 @@ async function buildPack({ outputDir, selectedIds, hekateConfig, signal }, emit)
   }
 
   emit({ type: 'log', text: `Bereite Zielordner vor: ${outputDir}` });
-  preparePackDir(outputDir);
+  // Nicht löschbare Reste des letzten Builds weiter mitführen
+  const uebrigeReste = preparePackDir(outputDir);
 
   const totalSteps = selected.length + 1; // +1 für Konfiguration/Abschluss
   let step = 0;
 
   const builtComponents = [];
-  const writtenFiles = []; // alle von uns geschriebenen Dateien (relativ zu outputDir)
+  const writtenFiles = [...uebrigeReste]; // alle von uns geschriebenen Dateien (relativ zu outputDir)
 
   // Der Marker wird auch bei Abbruch oder Fehler geschrieben. Sonst läge ein
   // halb gefüllter Ordner ohne Marker da und der nächste Build würde ihn für
@@ -288,7 +308,7 @@ async function buildPack({ outputDir, selectedIds, hekateConfig, signal }, emit)
           type: 'log',
           text: `${comp.name}: ${rule.action === 'extract' ? 'entpacke' : 'kopiere'} ${asset.name}`,
         });
-        for (const rel of applyAsset(rule, filePath, outputDir)) writtenFiles.push(rel);
+        applyAsset(rule, filePath, outputDir, writtenFiles);
       }
 
       for (const pattern of comp.cleanupRoot || []) {

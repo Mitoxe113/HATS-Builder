@@ -562,7 +562,7 @@ input, textarea { user-select: text; }
 
 /* ── SD-Laufwerke ──────────────────────────────────────────────────────── */
 .drive-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
-.drive-empty {
+.empty-hint {
   grid-column: 1 / -1;
   text-align: center;
   color: var(--text-faint);

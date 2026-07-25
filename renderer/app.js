@@ -276,7 +276,7 @@ function renderComponents() {
     host.appendChild(section);
   }
 
-  if (!shown) host.appendChild(el('div', 'drive-empty', t('comp.noResults', state.search.trim())));
+  if (!shown) host.appendChild(el('div', 'empty-hint', t('comp.noResults', state.search.trim())));
 
   $('#nav-badge-components').textContent = state.components.filter((c) => isSelected(c.id)).length;
 }
@@ -659,7 +659,7 @@ function renderDrives() {
   host.textContent = '';
 
   if (!state.drives.length) {
-    host.appendChild(el('div', 'drive-empty', t('sd.empty')));
+    host.appendChild(el('div', 'empty-hint', t('sd.empty')));
     return;
   }
 
@@ -701,13 +701,20 @@ async function copyToDrive(drive, btn) {
     return;
   }
   if (info.complete === false) {
-    toast(t('sd.packIncomplete'), 'error', 9000);
+    // Text kommt aus dem Hauptprozess, damit er nur an einer Stelle gepflegt wird
+    toast(info.incompleteMessage, 'error', 9000);
     return;
   }
 
   // Vorab nachsehen: passt es drauf, und welche eigenen Konfigurationsdateien
-  // würden überschrieben? Beides gehört in die Rückfrage.
-  const pre = await api.previewCopy({ packDir, driveLetter: drive.letter });
+  // würden überschrieben? Beides gehört in die Rückfrage. Klappt die Vorschau
+  // nicht, wird trotzdem weitergemacht, das Kopieren prüft selbst noch einmal.
+  let pre = null;
+  try {
+    pre = await api.previewCopy({ packDir, driveLetter: drive.letter });
+  } catch {
+    pre = null;
+  }
   if (pre && !pre.error && !pre.enoughSpace) {
     toast(t('sd.noSpace', fmtBytes(pre.neededBytes), fmtBytes(pre.freeBytes)), 'error', 12000);
     return;

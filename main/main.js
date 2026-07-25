@@ -91,11 +91,15 @@ function savedBounds() {
   const b = loadSettings().windowBounds;
   if (!b || !Number.isFinite(b.width) || !Number.isFinite(b.height)) return null;
   if (!Number.isFinite(b.x) || !Number.isFinite(b.y)) return { width: b.width, height: b.height };
-  const visible = screen.getAllDisplays().some((d) => {
+  // Eine Überschneidung von einem Pixel reicht nicht. Es muss so viel zu sehen
+  // sein, dass man das Fenster an der Titelleiste noch greifen kann.
+  const genugSichtbar = screen.getAllDisplays().some((d) => {
     const a = d.workArea;
-    return b.x < a.x + a.width && b.x + b.width > a.x && b.y < a.y + a.height && b.y + b.height > a.y;
+    const breite = Math.min(b.x + b.width, a.x + a.width) - Math.max(b.x, a.x);
+    const hoehe = Math.min(b.y + b.height, a.y + a.height) - Math.max(b.y, a.y);
+    return breite >= 200 && hoehe >= 100;
   });
-  return visible ? b : { width: b.width, height: b.height };
+  return genugSichtbar ? b : { width: b.width, height: b.height };
 }
 
 // ── Fenster ──────────────────────────────────────────────────────────────────
@@ -224,7 +228,12 @@ function registerIpc() {
     if (buildAbort) buildAbort.abort();
   });
 
-  ipcMain.handle('pack:info', (_e, dir) => builder.readPackInfo(dir));
+  ipcMain.handle('pack:info', (_e, dir) => {
+    const info = builder.readPackInfo(dir);
+    // Den Hinweistext gibt es nur hier, damit er nicht doppelt gepflegt wird
+    if (info && info.complete === false) info.incompleteMessage = mt('err.packIncomplete');
+    return info;
+  });
 
   ipcMain.handle('settings:reset', () => {
     const merged = saveSettings(resettableDefaults());

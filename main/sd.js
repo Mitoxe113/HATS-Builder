@@ -81,11 +81,25 @@ function driveRoot(driveLetter) {
   return root;
 }
 
-// Schaut vor dem Kopieren nach: Passt das Pack überhaupt drauf, und welche
-// eigenen Konfigurationsdateien würden überschrieben?
-function previewCopy(packDir, driveLetter) {
-  const root = driveRoot(driveLetter);
+// Freien Platz und Clustergröße des Laufwerks ermitteln.
+function driveSpace(root) {
+  try {
+    const st = fs.statfsSync(root);
+    return { freeBytes: st.bavail * st.bsize, clusterSize: st.bsize || 0 };
+  } catch {
+    // Nicht ermittelbar, dann eben ohne Platzprüfung
+    return { freeBytes: null, clusterSize: 0 };
+  }
+}
+
+// Geht den Pack-Ordner einmal durch und sammelt alles, was für Vorschau und
+// Kopieren gebraucht wird. Bewusst ein einziger Durchlauf, denn jedes statSync
+// geht auf die langsame SD-Karte.
+function scanCopy(packDir, root, clusterSize) {
   const files = listFiles(packDir);
+  // FAT32 belegt pro Datei mindestens einen ganzen Cluster. Bei vielen kleinen
+  // Dateien ist der Verschnitt sonst deutlich unterschätzt.
+  const belegt = (size) => (clusterSize > 0 ? Math.ceil(size / clusterSize) * clusterSize : size);
 
   let totalBytes = 0;
   let neededBytes = 0; // was zusätzlich gebraucht wird, vorhandene Dateien zählen nur anteilig
@@ -99,37 +113,45 @@ function previewCopy(packDir, driveLetter) {
     } catch {
       /* Datei ist neu */
     }
-    neededBytes += existing >= 0 ? Math.max(0, file.size - existing) : file.size;
+    neededBytes += existing >= 0 ? Math.max(0, belegt(file.size) - belegt(existing)) : belegt(file.size);
     if (existing >= 0 && isUserConfig(file.rel)) conflicts.push(file.rel);
   }
 
-  let freeBytes = null;
-  try {
-    const st = fs.statfsSync(root);
-    freeBytes = st.bavail * st.bsize;
-  } catch {
-    /* Freier Platz nicht ermittelbar, dann eben ohne Prüfung */
-  }
+  return { files, totalBytes, neededBytes, conflicts };
+}
 
-  // etwas Luft lassen, eine randvolle FAT32-Karte macht keine Freude
-  const enoughSpace = freeBytes === null || freeBytes >= neededBytes + 8 * 1024 * 1024;
-  return { totalFiles: files.length, totalBytes, neededBytes, freeBytes, enoughSpace, conflicts };
+// Schaut vor dem Kopieren nach: Passt das Pack überhaupt drauf, und welche
+// eigenen Konfigurationsdateien würden überschrieben?
+function previewCopy(packDir, driveLetter) {
+  const root = driveRoot(driveLetter);
+  const { freeBytes, clusterSize } = driveSpace(root);
+  const scan = scanCopy(packDir, root, clusterSize);
+  return {
+    totalFiles: scan.files.length,
+    totalBytes: scan.totalBytes,
+    neededBytes: scan.neededBytes,
+    freeBytes,
+    // etwas Luft lassen, eine randvolle FAT32-Karte macht keine Freude
+    enoughSpace: freeBytes === null || freeBytes >= scan.neededBytes + 8 * 1024 * 1024,
+    conflicts: scan.conflicts,
+  };
 }
 
 // Kopiert den Pack-Ordner auf das Laufwerk (Merge, vorhandene Dateien werden
 // überschrieben – so funktioniert auch das Aktualisieren eines bestehenden Setups).
 async function copyToDrive(packDir, driveLetter, emit, signal) {
   const root = driveRoot(driveLetter);
+  const { freeBytes, clusterSize } = driveSpace(root);
+  const scan = scanCopy(packDir, root, clusterSize);
 
   // Harte Bremse: lieber gar nicht anfangen als mittendrin abbrechen und ein
   // halbes CFW auf der Karte hinterlassen.
-  const pre = previewCopy(packDir, driveLetter);
-  if (!pre.enoughSpace) {
-    throw new Error(mt('err.notEnoughSpace', fmtMb(pre.neededBytes), fmtMb(pre.freeBytes)));
+  if (freeBytes !== null && freeBytes < scan.neededBytes + 8 * 1024 * 1024) {
+    throw new Error(mt('err.notEnoughSpace', fmtMb(scan.neededBytes), fmtMb(freeBytes)));
   }
 
-  const files = listFiles(packDir);
-  const totalBytes = files.reduce((sum, f) => sum + f.size, 0);
+  const files = scan.files;
+  const totalBytes = scan.totalBytes;
   let doneBytes = 0;
   let doneFiles = 0;
   let lastEmit = 0;
