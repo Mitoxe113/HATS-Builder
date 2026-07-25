@@ -58,15 +58,74 @@ function listFiles(dir) {
   return files;
 }
 
-// Kopiert den Pack-Ordner auf das Laufwerk (Merge, vorhandene Dateien werden
-// überschrieben – so funktioniert auch das Aktualisieren eines bestehenden Setups).
-async function copyToDrive(packDir, driveLetter, emit) {
+// Dateien, in denen typischerweise eigene Einstellungen des Nutzers stehen.
+// Die werden beim Kopieren überschrieben, deshalb vorher darauf hinweisen.
+function isUserConfig(rel) {
+  const p = rel.replace(/\\/g, '/');
+  return (
+    p.startsWith('config/') ||
+    p.startsWith('atmosphere/config/') ||
+    p.startsWith('atmosphere/hosts/') ||
+    p === 'bootloader/hekate_ipl.ini'
+  );
+}
+
+function driveRoot(driveLetter) {
   if (!/^[A-Z]:$/i.test(driveLetter)) {
     throw new Error(mt('err.invalidDrive', driveLetter));
   }
   const root = `${driveLetter}\\`;
   if (!fs.existsSync(root)) {
     throw new Error(mt('err.driveUnavailable', driveLetter));
+  }
+  return root;
+}
+
+// Schaut vor dem Kopieren nach: Passt das Pack überhaupt drauf, und welche
+// eigenen Konfigurationsdateien würden überschrieben?
+function previewCopy(packDir, driveLetter) {
+  const root = driveRoot(driveLetter);
+  const files = listFiles(packDir);
+
+  let totalBytes = 0;
+  let neededBytes = 0; // was zusätzlich gebraucht wird, vorhandene Dateien zählen nur anteilig
+  const conflicts = [];
+
+  for (const file of files) {
+    totalBytes += file.size;
+    let existing = -1;
+    try {
+      existing = fs.statSync(path.join(root, file.rel)).size;
+    } catch {
+      /* Datei ist neu */
+    }
+    neededBytes += existing >= 0 ? Math.max(0, file.size - existing) : file.size;
+    if (existing >= 0 && isUserConfig(file.rel)) conflicts.push(file.rel);
+  }
+
+  let freeBytes = null;
+  try {
+    const st = fs.statfsSync(root);
+    freeBytes = st.bavail * st.bsize;
+  } catch {
+    /* Freier Platz nicht ermittelbar, dann eben ohne Prüfung */
+  }
+
+  // etwas Luft lassen, eine randvolle FAT32-Karte macht keine Freude
+  const enoughSpace = freeBytes === null || freeBytes >= neededBytes + 8 * 1024 * 1024;
+  return { totalFiles: files.length, totalBytes, neededBytes, freeBytes, enoughSpace, conflicts };
+}
+
+// Kopiert den Pack-Ordner auf das Laufwerk (Merge, vorhandene Dateien werden
+// überschrieben – so funktioniert auch das Aktualisieren eines bestehenden Setups).
+async function copyToDrive(packDir, driveLetter, emit, signal) {
+  const root = driveRoot(driveLetter);
+
+  // Harte Bremse: lieber gar nicht anfangen als mittendrin abbrechen und ein
+  // halbes CFW auf der Karte hinterlassen.
+  const pre = previewCopy(packDir, driveLetter);
+  if (!pre.enoughSpace) {
+    throw new Error(mt('err.notEnoughSpace', fmtMb(pre.neededBytes), fmtMb(pre.freeBytes)));
   }
 
   const files = listFiles(packDir);
@@ -76,6 +135,7 @@ async function copyToDrive(packDir, driveLetter, emit) {
   let lastEmit = 0;
 
   for (const file of files) {
+    if (signal && signal.aborted) throw new Error(mt('err.cancelled'));
     const target = path.join(root, file.rel);
     // Kein mkdir auf bereits existierende Ordner: Node wirft auf Laufwerks-Roots
     // (z. B. "F:\") fälschlich EPERM, selbst mit recursive:true
@@ -101,4 +161,8 @@ async function copyToDrive(packDir, driveLetter, emit) {
   return { files: doneFiles, bytes: doneBytes };
 }
 
-module.exports = { listDrives, copyToDrive };
+function fmtMb(bytes) {
+  return `${Math.round((bytes || 0) / 1048576)} MB`;
+}
+
+module.exports = { listDrives, copyToDrive, previewCopy, isUserConfig };

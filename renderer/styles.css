@@ -123,6 +123,31 @@ code { font-family: var(--mono); font-size: 0.9em; color: var(--accent-2); }
 .settings-btn svg { flex-shrink: 0; }
 .version { text-align: center; color: var(--text-faint); font-size: 11px; }
 
+/* ── Suchfeld und Kopfzeilen-Aktionen ──────────────────────────────────── */
+.header-actions { display: flex; gap: 9px; align-items: center; flex-shrink: 0; }
+.search-input {
+  width: 190px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  padding: 8px 13px;
+  font-family: inherit; font-size: 13px;
+  transition: border-color 0.15s, width 0.15s;
+}
+.search-input:focus { outline: none; border-color: var(--accent); width: 230px; }
+.search-input::placeholder { color: var(--text-faint); }
+.search-input::-webkit-search-cancel-button { filter: invert(0.6); cursor: pointer; }
+
+/* ── Abbrechen im Fortschritt ──────────────────────────────────────────── */
+.progress-head-right { display: flex; align-items: center; gap: 10px; }
+.btn-cancel { padding: 4px 11px; font-size: 12px; }
+.btn-cancel[hidden] { display: none; }
+
+/* anklickbare Version, die die Release-Notizen öffnet */
+.badge.version.clickable { cursor: pointer; }
+.badge.version.clickable:hover { filter: brightness(1.35); text-decoration: underline; }
+
 /* ── Update-Banner ─────────────────────────────────────────────────────── */
 .update-banner {
   display: flex; align-items: center; gap: 12px;
@@ -164,6 +189,19 @@ code { font-family: var(--mono); font-size: 0.9em; color: var(--accent-2); }
   overflow: hidden;
 }
 @keyframes modalIn { from { opacity: 0; transform: translateY(10px) scale(0.98); } to { opacity: 1; } }
+.modal-wide { width: 640px; }
+.notes-body {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 14px 16px;
+  font-family: var(--mono); font-size: 12px; line-height: 1.6;
+  color: var(--text-dim);
+  white-space: pre-wrap; word-break: break-word;
+  max-height: 46vh; overflow-y: auto;
+  user-select: text;
+}
+
 .modal-head {
   display: flex; align-items: center; justify-content: space-between;
   padding: 18px 20px;

@@ -69,10 +69,13 @@
             <h1 data-i18n="comp.title">Komponenten</h1>
             <p class="subtitle" data-i18n="comp.subtitle">Wähle aus, was in dein SD-Pack kommt. Die Versionen kommen immer direkt von GitHub.</p>
           </div>
-          <button class="btn btn-secondary" id="btn-check-updates">
-            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>
-            <span data-i18n="comp.checkUpdates">Updates prüfen</span>
-          </button>
+          <div class="header-actions">
+            <input type="search" id="comp-search" class="search-input" data-i18n-ph="comp.search" placeholder="Suchen …" spellcheck="false" />
+            <button class="btn btn-secondary" id="btn-check-updates">
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>
+              <span data-i18n="comp.checkUpdates">Updates prüfen</span>
+            </button>
+          </div>
         </header>
         <div class="release-status" id="release-status"></div>
         <div id="component-sections"></div>
@@ -145,7 +148,10 @@
           <div class="progress-area" id="build-progress" hidden>
             <div class="progress-head">
               <span id="progress-step-label"></span>
-              <span id="progress-step-count"></span>
+              <span class="progress-head-right">
+                <span id="progress-step-count"></span>
+                <button class="btn btn-ghost btn-cancel" id="btn-build-cancel" data-i18n="action.cancel">Abbrechen</button>
+              </span>
             </div>
             <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
             <div class="progress-log" id="progress-log"></div>
@@ -167,7 +173,10 @@
           <div class="progress-area" id="sd-progress" hidden>
             <div class="progress-head">
               <span id="sd-progress-label"></span>
-              <span id="sd-progress-count"></span>
+              <span class="progress-head-right">
+                <span id="sd-progress-count"></span>
+                <button class="btn btn-ghost btn-cancel" id="btn-sd-cancel" data-i18n="action.cancel">Abbrechen</button>
+              </span>
             </div>
             <div class="progress-bar"><div class="progress-fill" id="sd-progress-fill"></div></div>
           </div>
@@ -206,11 +215,31 @@
             <button class="btn btn-ghost" id="btn-token-help" data-i18n="token.create">Token erstellen</button>
           </div>
         </div>
+        <div class="setting-block">
+          <div class="setting-block-label" data-i18n="settings.reset">Zurücksetzen</div>
+          <p class="settings-hint" data-i18n="reset.hint">Setzt die Komponenten-Auswahl, die Hekate-Einstellungen und den Zielordner auf den Ausgangszustand. Sprache und Token bleiben.</p>
+          <button class="btn btn-secondary" id="btn-reset-settings" data-i18n="reset.button">Auf Standard zurücksetzen</button>
+        </div>
+
         <div class="settings-info">
           <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
           <span data-i18n="settings.info">Nur offizielle Releases, direkt von den Entwicklern</span>
         </div>
         <div class="settings-version" id="settings-version"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Release-Notizen einer Komponente ─────────────────────── -->
+  <div class="modal-overlay" id="notes-modal" hidden>
+    <div class="modal modal-wide">
+      <div class="modal-head">
+        <h2 id="notes-title"></h2>
+        <button class="modal-close" id="btn-notes-close" data-i18n-aria="settings.close" aria-label="Schließen">✕</button>
+      </div>
+      <div class="modal-body">
+        <pre class="notes-body" id="notes-body"></pre>
+        <button class="btn btn-ghost" id="btn-notes-open" data-i18n="notes.openGithub">Auf GitHub ansehen</button>
       </div>
     </div>
   </div>

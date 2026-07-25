@@ -15,6 +15,7 @@ const state = {
   drives: [],
   lang: 'de',
   appVersion: '',
+  search: '',
 };
 
 const $ = (sel) => document.querySelector(sel);
@@ -184,19 +185,33 @@ function releaseBadge(id) {
   }
   const wrap = el('span');
   const version = el('span', 'badge version', rel.tag + (rel.stale ? t('badge.offline') : ''));
-  version.title = rel.name || '';
+  // Die Release-Notizen holen wir ohnehin mit, also auch anzeigen
+  version.title = rel.body ? t('notes.hint') : rel.name || '';
+  if (rel.body || rel.htmlUrl) {
+    version.classList.add('clickable');
+    version.addEventListener('click', () => showNotes(id));
+  }
   wrap.appendChild(version);
   if (rel.publishedAt) wrap.appendChild(el('span', 'badge date', fmtDate(rel.publishedAt)));
   return wrap;
 }
 
+// Sucht in Name, Repo und Beschreibung
+function matchesSearch(comp) {
+  const q = state.search.trim().toLowerCase();
+  if (!q) return true;
+  return `${comp.name} ${comp.repo} ${pick(comp.description)}`.toLowerCase().includes(q);
+}
+
 function renderComponents() {
   const host = $('#component-sections');
   host.textContent = '';
+  let shown = 0;
 
   for (const cat of state.categories) {
-    const comps = state.components.filter((c) => c.category === cat.id);
+    const comps = state.components.filter((c) => c.category === cat.id && matchesSearch(c));
     if (!comps.length) continue;
+    shown += comps.length;
 
     const section = el('div', 'comp-section');
     const head = el('div', 'comp-section-head');
@@ -261,7 +276,23 @@ function renderComponents() {
     host.appendChild(section);
   }
 
+  if (!shown) host.appendChild(el('div', 'drive-empty', t('comp.noResults', state.search.trim())));
+
   $('#nav-badge-components').textContent = state.components.filter((c) => isSelected(c.id)).length;
+}
+
+// ── Release-Notizen ─────────────────────────────────────────────────────────
+let notesRepoUrl = '';
+
+function showNotes(id) {
+  const comp = state.components.find((c) => c.id === id);
+  const rel = state.releases[id];
+  if (!comp || !rel) return;
+  notesRepoUrl = rel.htmlUrl || `https://github.com/${comp.repo}`;
+  $('#notes-title').textContent = `${comp.name} ${rel.tag || ''}`.trim();
+  // textContent, damit fremder Markdown-Text niemals als HTML landet
+  $('#notes-body').textContent = (rel.body || '').trim() || t('notes.none');
+  $('#notes-modal').hidden = false;
 }
 
 // Zeigt die Zusammenfassungs-Statusleiste anhand von state.releases
@@ -561,12 +592,22 @@ function handleProgress(event) {
   }
 }
 
+// Merkt sich, ob der Nutzer selbst abgebrochen hat. Das über die Fehlermeldung
+// zu erkennen wäre falsch, sobald sie übersetzt ist.
+let buildCancelled = false;
+let copyCancelled = false;
+
 async function build() {
   if (state.building) return;
   state.building = true;
+  buildCancelled = false;
   const btn = $('#btn-build');
+  const cancelBtn = $('#btn-build-cancel');
   btn.disabled = true;
   btn.querySelector('span').textContent = t('build.creating');
+  cancelBtn.disabled = false;
+  cancelBtn.textContent = t('action.cancel');
+  cancelBtn.hidden = false;
   $('#build-result').hidden = true;
   $('#progress-log').textContent = '';
   setBuildProgress(0, t('build.prep'), '');
@@ -588,12 +629,18 @@ async function build() {
     toast(t('toast.buildSuccess'), 'success');
     refreshDrives();
   } catch (err) {
-    logLine(`✗ ${err.message}`);
-    toast(t('toast.buildError', err.message), 'error', 9000);
+    if (buildCancelled) {
+      logLine(`✗ ${t('action.cancel')}`);
+      toast(t('build.cancelled'), 'info', 9000);
+    } else {
+      logLine(`✗ ${err.message}`);
+      toast(t('toast.buildError', err.message), 'error', 9000);
+    }
   } finally {
     state.building = false;
     btn.disabled = false;
     btn.querySelector('span').textContent = t('build.create');
+    $('#btn-build-cancel').hidden = true;
   }
 }
 
@@ -647,26 +694,56 @@ function renderDrives() {
 
 async function copyToDrive(drive, btn) {
   if (state.copying) return;
-  const info = await api.packInfo(state.settings.outputDir);
+  const packDir = state.settings.outputDir;
+  const info = await api.packInfo(packDir);
   if (!info) {
     toast(t('sd.needPack'), 'error');
     return;
   }
-  if (!confirm(t('sd.confirm', drive.letter, drive.label))) return;
+  if (info.complete === false) {
+    toast(t('sd.packIncomplete'), 'error', 9000);
+    return;
+  }
+
+  // Vorab nachsehen: passt es drauf, und welche eigenen Konfigurationsdateien
+  // würden überschrieben? Beides gehört in die Rückfrage.
+  const pre = await api.previewCopy({ packDir, driveLetter: drive.letter });
+  if (pre && !pre.error && !pre.enoughSpace) {
+    toast(t('sd.noSpace', fmtBytes(pre.neededBytes), fmtBytes(pre.freeBytes)), 'error', 12000);
+    return;
+  }
+
+  let frage = t('sd.confirm', drive.letter, drive.label);
+  if (pre && !pre.error) {
+    frage += `\n\n${t('sd.confirmSpace', fmtBytes(pre.neededBytes), fmtBytes(pre.freeBytes))}`;
+    if (pre.conflicts.length) {
+      const liste = pre.conflicts.slice(0, 8).join('\n');
+      const rest = pre.conflicts.length > 8 ? `\n… (+${pre.conflicts.length - 8})` : '';
+      frage += `\n\n${t('sd.confirmConflicts', pre.conflicts.length, liste + rest)}`;
+    }
+  }
+  if (!confirm(frage)) return;
 
   state.copying = true;
+  copyCancelled = false;
   btn.disabled = true;
+  const cancelBtn = $('#btn-sd-cancel');
+  cancelBtn.disabled = false;
+  cancelBtn.textContent = t('action.cancel');
+  cancelBtn.hidden = false;
   $('#sd-progress').hidden = false;
 
   try {
-    const result = await api.copyToDrive({ packDir: state.settings.outputDir, driveLetter: drive.letter });
+    const result = await api.copyToDrive({ packDir, driveLetter: drive.letter });
     $('#sd-progress-label').textContent = t('build.done');
     toast(t('sd.copyDone', result.files, fmtBytes(result.bytes), drive.letter), 'success', 9000);
   } catch (err) {
-    toast(t('sd.copyError', err.message), 'error', 9000);
+    if (copyCancelled) toast(t('sd.cancelled'), 'info', 12000);
+    else toast(t('sd.copyError', err.message), 'error', 9000);
   } finally {
     state.copying = false;
     btn.disabled = false;
+    cancelBtn.hidden = true;
   }
 }
 
@@ -744,22 +821,31 @@ function renderLangButtons() {
   }
 }
 
-function initSettingsModal() {
-  renderLangButtons();
-  const modal = $('#settings-modal');
-  const open = () => {
-    modal.hidden = false;
-  };
+// Schließen über Kreuz, Klick auf den Hintergrund und Escape. Gilt für jedes
+// Fenster, damit sich alle gleich anfühlen.
+function initModal(modalId, closeBtnId) {
+  const modal = $(modalId);
   const close = () => {
     modal.hidden = true;
   };
-  $('#btn-settings').addEventListener('click', open);
-  $('#btn-settings-close').addEventListener('click', close);
+  $(closeBtnId).addEventListener('click', close);
   modal.addEventListener('click', (e) => {
     if (e.target === modal) close();
   });
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && !modal.hidden) close();
+  });
+}
+
+function initSettingsModal() {
+  renderLangButtons();
+  initModal('#settings-modal', '#btn-settings-close');
+  initModal('#notes-modal', '#btn-notes-close');
+  $('#btn-settings').addEventListener('click', () => {
+    $('#settings-modal').hidden = false;
+  });
+  $('#btn-notes-open').addEventListener('click', () => {
+    if (notesRepoUrl) api.openExternal(notesRepoUrl);
   });
 }
 
@@ -817,6 +903,41 @@ async function main() {
     $('#update-banner').hidden = true;
   });
   $('#btn-check-update').addEventListener('click', () => checkForUpdate({ silent: false }));
+
+  $('#comp-search').addEventListener('input', (e) => {
+    state.search = e.target.value;
+    renderComponents();
+  });
+
+  $('#btn-build-cancel').addEventListener('click', () => {
+    buildCancelled = true;
+    const b = $('#btn-build-cancel');
+    b.disabled = true;
+    b.textContent = t('action.cancelling');
+    api.cancelBuild();
+  });
+
+  $('#btn-sd-cancel').addEventListener('click', () => {
+    copyCancelled = true;
+    const b = $('#btn-sd-cancel');
+    b.disabled = true;
+    b.textContent = t('action.cancelling');
+    api.cancelCopy();
+  });
+
+  $('#btn-reset-settings').addEventListener('click', async () => {
+    if (!confirm(t('reset.confirm'))) return;
+    const merged = await api.resetSettings();
+    // Sprache und Token bleiben, deshalb den Rest gezielt übernehmen
+    state.settings.selected = merged.selected;
+    state.settings.hekate = merged.hekate;
+    state.settings.outputDir = merged.outputDir;
+    state.settings.outputDirCustom = merged.outputDirCustom;
+    renderComponents();
+    renderHekate();
+    renderBuildSummary();
+    toast(t('reset.done'), 'success');
+  });
 
   // Beim Start automatisch die aktuellen Versionen laden (aus Cache oder GitHub)
   checkReleases(false);

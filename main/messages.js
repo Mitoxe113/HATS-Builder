@@ -80,6 +80,14 @@ const M = {
     de: 'Es läuft bereits ein Kopiervorgang.',
     en: 'A copy is already in progress.',
   },
+  'err.cancelled': {
+    de: 'Abgebrochen.',
+    en: 'Cancelled.',
+  },
+  'err.notEnoughSpace': {
+    de: 'Auf der Karte ist zu wenig Platz. Gebraucht werden {0}, frei sind {1}.',
+    en: 'Not enough space on the card. {0} needed, {1} free.',
+  },
   'err.badUpdateUrl': {
     de: 'Unerwartete Download-Adresse, das Update wurde abgebrochen.',
     en: 'Unexpected download address, the update was cancelled.',
@@ -87,6 +95,10 @@ const M = {
   'err.updateRunning': {
     de: 'Das Update wird bereits heruntergeladen.',
     en: 'The update is already downloading.',
+  },
+  'err.packIncomplete': {
+    de: 'Das Pack im Zielordner ist unvollständig, der letzte Build wurde abgebrochen. Bitte erst neu erstellen.',
+    en: 'The pack in the target folder is incomplete, the last build was cancelled. Please rebuild it first.',
   },
   'err.noPack': {
     de: 'Im Zielordner liegt kein fertiges Pack. Bitte zuerst das Pack erstellen.',

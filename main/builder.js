@@ -20,7 +20,13 @@ function init(userDataDir) {
   fs.mkdirSync(cacheDir, { recursive: true });
 }
 
-async function downloadAsset(component, release, asset, emit) {
+// Wirft, sobald der Nutzer abgebrochen hat. An jeder Stelle aufrufen, an der
+// eine längere Schleife weiterlaufen würde.
+function throwIfAborted(signal) {
+  if (signal && signal.aborted) throw new Error(mt('err.cancelled'));
+}
+
+async function downloadAsset(component, release, asset, emit, signal) {
   const dir = path.join(cacheDir, component.id, release.tag.replace(/[^\w.-]/g, '_'));
   fs.mkdirSync(dir, { recursive: true });
   const dest = path.join(dir, asset.name);
@@ -39,7 +45,7 @@ async function downloadAsset(component, release, asset, emit) {
     /* nicht vorhanden → laden */
   }
 
-  const res = await fetch(asset.url, { headers: { 'User-Agent': 'HATS-Builder' } });
+  const res = await fetch(asset.url, { headers: { 'User-Agent': 'HATS-Builder' }, signal });
   if (!res.ok || !res.body) {
     throw new Error(mt('err.downloadFailed', asset.name, res.status));
   }
@@ -212,7 +218,7 @@ function expandSelection(selectedIds) {
 
 // Baut das komplette SD-Pack in outputDir.
 // emit(event) schickt Fortschritt an den Renderer.
-async function buildPack({ outputDir, selectedIds, hekateConfig }, emit) {
+async function buildPack({ outputDir, selectedIds, hekateConfig, signal }, emit) {
   const ids = expandSelection(selectedIds);
   // Registry-Reihenfolge beibehalten – sie bestimmt, wer wen überschreibt
   const selected = COMPONENTS.filter((c) => ids.has(c.id));
@@ -220,6 +226,7 @@ async function buildPack({ outputDir, selectedIds, hekateConfig }, emit) {
   emit({ type: 'log', text: `Prüfe neueste Versionen (${selected.length} Komponenten) …` });
   const releases = {};
   for (const comp of selected) {
+    throwIfAborted(signal);
     releases[comp.id] = await github.fetchLatest(comp);
   }
 
@@ -231,78 +238,105 @@ async function buildPack({ outputDir, selectedIds, hekateConfig }, emit) {
 
   const builtComponents = [];
   const writtenFiles = []; // alle von uns geschriebenen Dateien (relativ zu outputDir)
-  for (const comp of selected) {
-    const release = releases[comp.id];
-    step += 1;
-    emit({
-      type: 'step',
-      component: comp.id,
-      name: comp.name,
-      version: release.tag,
-      step,
-      totalSteps,
-    });
 
-    for (const rule of comp.assets) {
-      const asset = release.assets.find((a) => rule.match.test(a.name));
-      if (!asset) {
-        throw new Error(mt('err.noAsset', comp.name, String(rule.match)));
-      }
-      const filePath = await downloadAsset(comp, release, asset, emit);
+  // Der Marker wird auch bei Abbruch oder Fehler geschrieben. Sonst läge ein
+  // halb gefüllter Ordner ohne Marker da und der nächste Build würde ihn für
+  // fremd halten und sich weigern.
+  const writeMarker = (complete) => {
+    try {
+      fs.writeFileSync(
+        path.join(outputDir, MARKER),
+        JSON.stringify(
+          {
+            builtWith: 'HATS Builder',
+            builtAt: new Date().toISOString(),
+            complete,
+            components: builtComponents,
+            // Liste aller geschriebenen Dateien, für gezieltes Aufräumen beim Neu-Bauen
+            files: [...new Set(writtenFiles)],
+          },
+          null,
+          2
+        )
+      );
+    } catch {
+      /* wenn selbst das scheitert, ist der ursprüngliche Fehler wichtiger */
+    }
+  };
+
+  try {
+    for (const comp of selected) {
+      throwIfAborted(signal);
+      const release = releases[comp.id];
+      step += 1;
       emit({
-        type: 'log',
-        text: `${comp.name}: ${rule.action === 'extract' ? 'entpacke' : 'kopiere'} ${asset.name}`,
+        type: 'step',
+        component: comp.id,
+        name: comp.name,
+        version: release.tag,
+        step,
+        totalSteps,
       });
-      for (const rel of applyAsset(rule, filePath, outputDir)) writtenFiles.push(rel);
-    }
 
-    for (const pattern of comp.cleanupRoot || []) {
-      for (const entry of fs.readdirSync(outputDir)) {
-        if (pattern.test(entry)) fs.rmSync(path.join(outputDir, entry), { force: true });
+      for (const rule of comp.assets) {
+        const asset = release.assets.find((a) => rule.match.test(a.name));
+        if (!asset) {
+          throw new Error(mt('err.noAsset', comp.name, String(rule.match)));
+        }
+        const filePath = await downloadAsset(comp, release, asset, emit, signal);
+        emit({
+          type: 'log',
+          text: `${comp.name}: ${rule.action === 'extract' ? 'entpacke' : 'kopiere'} ${asset.name}`,
+        });
+        for (const rel of applyAsset(rule, filePath, outputDir)) writtenFiles.push(rel);
       }
+
+      for (const pattern of comp.cleanupRoot || []) {
+        for (const entry of fs.readdirSync(outputDir)) {
+          if (pattern.test(entry)) fs.rmSync(path.join(outputDir, entry), { force: true });
+        }
+      }
+
+      builtComponents.push({
+        id: comp.id,
+        name: comp.name,
+        version: release.tag,
+        stale: !!release.stale,
+      });
     }
 
-    builtComponents.push({
-      id: comp.id,
-      name: comp.name,
-      version: release.tag,
-      stale: !!release.stale,
-    });
+    throwIfAborted(signal);
+
+    // Hekate-Boot-Menü-Konfiguration schreiben
+    step += 1;
+    emit({ type: 'step', component: null, name: 'Hekate-Konfiguration', version: '', step, totalSteps });
+    const hk = normalize(hekateConfig);
+    const bootloaderDir = path.join(outputDir, 'bootloader');
+    fs.mkdirSync(bootloaderDir, { recursive: true });
+    fs.writeFileSync(path.join(bootloaderDir, 'hekate_ipl.ini'), generateIni(hk));
+    writtenFiles.push(path.join('bootloader', 'hekate_ipl.ini'));
+    emit({ type: 'log', text: 'bootloader/hekate_ipl.ini geschrieben' });
+
+    // Nintendo-Server blocken (Atmosphère DNS-MITM, 90DNS-Liste)
+    const hostsDir = path.join(outputDir, 'atmosphere', 'hosts');
+    const writeHost = (file) => {
+      fs.mkdirSync(hostsDir, { recursive: true });
+      fs.writeFileSync(path.join(hostsDir, file), NINTENDO_BLOCK);
+      writtenFiles.push(path.join('atmosphere', 'hosts', file));
+      emit({ type: 'log', text: `atmosphere/hosts/${file} geschrieben (Nintendo-Server geblockt)` });
+    };
+    if (hk.blockNintendoEmu) writeHost('emummc.txt');
+    if (hk.blockNintendoSys) writeHost('sysmmc.txt');
+
+    // Hotfix-Ordner, die Homebrew erwartet
+    fs.mkdirSync(path.join(outputDir, 'switch'), { recursive: true });
+  } catch (err) {
+    writeMarker(false);
+    throw err;
   }
 
-  // Hekate-Boot-Menü-Konfiguration schreiben
-  step += 1;
-  emit({ type: 'step', component: null, name: 'Hekate-Konfiguration', version: '', step, totalSteps });
-  const hk = normalize(hekateConfig);
-  const bootloaderDir = path.join(outputDir, 'bootloader');
-  fs.mkdirSync(bootloaderDir, { recursive: true });
-  fs.writeFileSync(path.join(bootloaderDir, 'hekate_ipl.ini'), generateIni(hk));
-  writtenFiles.push(path.join('bootloader', 'hekate_ipl.ini'));
-  emit({ type: 'log', text: 'bootloader/hekate_ipl.ini geschrieben' });
-
-  // Nintendo-Server blocken (Atmosphère DNS-MITM, 90DNS-Liste)
-  const hostsDir = path.join(outputDir, 'atmosphere', 'hosts');
-  const writeHost = (file) => {
-    fs.mkdirSync(hostsDir, { recursive: true });
-    fs.writeFileSync(path.join(hostsDir, file), NINTENDO_BLOCK);
-    writtenFiles.push(path.join('atmosphere', 'hosts', file));
-    emit({ type: 'log', text: `atmosphere/hosts/${file} geschrieben (Nintendo-Server geblockt)` });
-  };
-  if (hk.blockNintendoEmu) writeHost('emummc.txt');
-  if (hk.blockNintendoSys) writeHost('sysmmc.txt');
-
-  // Hotfix-Ordner, die Homebrew erwartet
-  fs.mkdirSync(path.join(outputDir, 'switch'), { recursive: true });
-
   const stats = dirStats(outputDir);
-  const marker = {
-    builtWith: 'HATS Builder',
-    builtAt: new Date().toISOString(),
-    components: builtComponents,
-    // Liste aller geschriebenen Dateien – für gezieltes Aufräumen beim Neu-Bauen
-    files: [...new Set(writtenFiles)],
-  };
-  fs.writeFileSync(path.join(outputDir, MARKER), JSON.stringify(marker, null, 2));
+  writeMarker(true);
 
   return { outputDir, components: builtComponents, files: stats.files + 1, bytes: stats.bytes };
 }

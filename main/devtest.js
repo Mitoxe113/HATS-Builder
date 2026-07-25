@@ -56,6 +56,30 @@ async function takeScreenshots(win, shotDir) {
     }
   }
 
+  // Suche und Release-Notizen
+  await click('.nav-item[data-view="components"]');
+  // In einer Funktion kapseln: im Seiten-Scope würde ein zweites "const s"
+  // mit dem ersten kollidieren.
+  const setSearch = (value) =>
+    win.webContents.executeJavaScript(
+      `(() => { const s = document.querySelector('#comp-search'); s.value = ${JSON.stringify(value)};` +
+        `s.dispatchEvent(new Event('input', { bubbles: true })); return true; })()`
+    );
+  await setSearch('overlay');
+  await sleep(400);
+  await shot('view-components-search.png');
+  await setSearch('');
+  await sleep(300);
+  const hasNotes = await win.webContents.executeJavaScript(
+    "(() => { const b = document.querySelector('.badge.version.clickable'); if (b) b.click(); return Boolean(b); })()"
+  );
+  if (hasNotes) {
+    await sleep(400);
+    await shot('notes-modal.png');
+    await click('#btn-notes-close');
+    await sleep(200);
+  }
+
   // Hekate-Ansicht ist lang → zusätzlich ganz unten abbilden (Auto-NoGC, DNS-Block)
   await click('.nav-item[data-view="hekate"]');
   await win.webContents.executeJavaScript('document.querySelector(".main").scrollTop = document.querySelector(".main").scrollHeight; true');

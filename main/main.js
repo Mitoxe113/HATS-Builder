@@ -1,6 +1,6 @@
 'use strict';
 
-const { app, BrowserWindow, ipcMain, dialog, shell } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, shell, screen } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const { COMPONENTS, CATEGORIES } = require('./components');
@@ -16,6 +16,8 @@ let win = null;
 let building = false;
 let copying = false;
 let downloadingUpdate = false;
+let buildAbort = null;
+let copyAbort = null;
 
 // ── Einstellungen (persistiert in userData/settings.json) ───────────────────
 function settingsPath() {
@@ -44,6 +46,19 @@ function defaultSettings() {
     outputDirCustom: false, // true, sobald der Nutzer bewusst „Ändern“ gewählt hat
     githubToken: '',
     language: 'de', // 'de' | 'en'
+    windowBounds: null, // zuletzt genutzte Fenstergröße und -position
+  };
+}
+
+// Diese Einstellungen setzt „Zurücksetzen“ auf den Auslieferungszustand.
+// Token, Sprache und Fenstergröße bleiben bewusst erhalten.
+function resettableDefaults() {
+  const d = defaultSettings();
+  return {
+    selected: d.selected,
+    hekate: d.hekate,
+    outputDir: d.outputDir,
+    outputDirCustom: false,
   };
 }
 
@@ -70,11 +85,26 @@ function saveSettings(partial) {
   return merged;
 }
 
+// Gemerkte Fenstergröße nur übernehmen, wenn sie auf einem aktuell
+// angeschlossenen Bildschirm liegt. Sonst startet das Fenster im Nichts.
+function savedBounds() {
+  const b = loadSettings().windowBounds;
+  if (!b || !Number.isFinite(b.width) || !Number.isFinite(b.height)) return null;
+  if (!Number.isFinite(b.x) || !Number.isFinite(b.y)) return { width: b.width, height: b.height };
+  const visible = screen.getAllDisplays().some((d) => {
+    const a = d.workArea;
+    return b.x < a.x + a.width && b.x + b.width > a.x && b.y < a.y + a.height && b.y + b.height > a.y;
+  });
+  return visible ? b : { width: b.width, height: b.height };
+}
+
 // ── Fenster ──────────────────────────────────────────────────────────────────
 function createWindow() {
+  const bounds = savedBounds();
   win = new BrowserWindow({
     width: 1280,
     height: 860,
+    ...(bounds || {}),
     minWidth: 1020,
     minHeight: 700,
     show: false,
@@ -93,6 +123,16 @@ function createWindow() {
   win.setMenuBarVisibility(false);
   win.once('ready-to-show', () => win.show());
   win.loadFile(path.join(__dirname, '..', 'renderer', 'index.html'));
+
+  // Fenstergröße für den nächsten Start merken. getNormalBounds liefert die
+  // Größe im nicht maximierten Zustand, sonst käme immer der Vollbild-Wert.
+  win.on('close', () => {
+    try {
+      saveSettings({ windowBounds: win.getNormalBounds() });
+    } catch {
+      /* nicht kritisch */
+    }
+  });
 
   // Test-Modi (nur mit HATS_SMOKE-Umgebungsvariable aktiv)
   if (process.env.HATS_SMOKE) {
@@ -166,33 +206,61 @@ function registerIpc() {
   ipcMain.handle('pack:build', async (_e, { outputDir, selectedIds, hekateConfig }) => {
     if (building) throw new Error(mt('err.buildRunning'));
     building = true;
+    buildAbort = new AbortController();
     try {
       const summary = await builder.buildPack(
-        { outputDir, selectedIds, hekateConfig },
+        { outputDir, selectedIds, hekateConfig, signal: buildAbort.signal },
         sendProgress
       );
       saveSettings({ outputDir, selected: selectedIds, hekate: hekateConfig });
       return summary;
     } finally {
       building = false;
+      buildAbort = null;
     }
+  });
+
+  ipcMain.handle('pack:cancel', () => {
+    if (buildAbort) buildAbort.abort();
   });
 
   ipcMain.handle('pack:info', (_e, dir) => builder.readPackInfo(dir));
 
+  ipcMain.handle('settings:reset', () => {
+    const merged = saveSettings(resettableDefaults());
+    return merged;
+  });
+
   ipcMain.handle('sd:list', () => sd.listDrives());
+
+  ipcMain.handle('sd:preview', (_e, { packDir, driveLetter }) => {
+    try {
+      return sd.previewCopy(packDir, driveLetter);
+    } catch (err) {
+      return { error: err.message };
+    }
+  });
 
   ipcMain.handle('sd:copy', async (_e, { packDir, driveLetter }) => {
     if (copying) throw new Error(mt('err.copyRunning'));
-    if (!builder.readPackInfo(packDir)) {
-      throw new Error(mt('err.noPack'));
+    const info = builder.readPackInfo(packDir);
+    // Ein abgebrochener Build hinterlässt einen Marker mit complete:false.
+    // So ein halbes Pack darf nicht auf die Karte.
+    if (!info || info.complete === false) {
+      throw new Error(mt(info ? 'err.packIncomplete' : 'err.noPack'));
     }
     copying = true;
+    copyAbort = new AbortController();
     try {
-      return await sd.copyToDrive(packDir, driveLetter, sendProgress);
+      return await sd.copyToDrive(packDir, driveLetter, sendProgress, copyAbort.signal);
     } finally {
       copying = false;
+      copyAbort = null;
     }
+  });
+
+  ipcMain.handle('sd:cancel', () => {
+    if (copyAbort) copyAbort.abort();
   });
 
   // ── Selbst-Update ─────────────────────────────────────────────────────────
