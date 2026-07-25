@@ -15,11 +15,11 @@ Es gibt drei Tabs.
 
 **Hekate-Config.** Hier richtest du das Boot-Menü ein. Du legst fest, welcher Eintrag automatisch startet, wie lange das Boot-Logo zu sehen ist, ob Auto-NoGC an ist und noch ein paar Dinge mehr. Dazu siehst du eine Live-Vorschau der hekate_ipl.ini, die in dein Pack kommt. In einem eigenen Bereich kannst du Nintendos Server per DNS blocken. Für emuMMC ist das standardmäßig an, für sysMMC aus, und du kannst beides umstellen.
 
-**Erstellen und SD.** Die App lädt die neuesten Versionen, baut den fertigen SD-Ordner und kopiert ihn auf Wunsch direkt auf deine Karte. Dabei führt sie alles zusammen, deine Spielstände, der Nintendo-Ordner und die emuMMC bleiben also unangetastet. Vor dem Kopieren prüft sie, ob das Pack überhaupt draufpasst, und sagt dir, welche deiner eigenen Konfigurationsdateien überschrieben würden. Sowohl das Erstellen als auch das Kopieren lässt sich jederzeit abbrechen.
+**Erstellen und SD.** Steckt die SD-Karte schon im PC, geht es in einem Rutsch: Ein Klick auf „Pack direkt auf F: erstellen“ lädt alles und schreibt es sofort auf die Karte, du brauchst dafür keinen Ordner. Alternativ baut die App den Pack in einen Ordner und kopiert ihn auf Wunsch später. Dabei führt sie alles zusammen, deine Spielstände, der Nintendo-Ordner und die emuMMC bleiben also unangetastet. Vor dem Kopieren prüft sie, ob das Pack überhaupt draufpasst, und sagt dir, welche deiner eigenen Konfigurationsdateien überschrieben würden. Sowohl das Erstellen als auch das Kopieren lässt sich jederzeit abbrechen.
 
 ### Starten
 
-Nimm `HATS Builder.exe` (die ist portabel, einfach doppelklicken) oder führe den Installer `HATS Builder Setup.exe` aus. Der Ordner `Switch-SD-Pack` wird direkt neben der App angelegt.
+Nimm `HATS Builder.exe` (die ist portabel, einfach doppelklicken) oder führe den Installer `HATS Builder Setup.exe` aus. Solange du keinen eigenen Ordner wählst, legt die App `Switch-SD-Pack` auf dem Desktop an.
 
 Die App sucht beim Start selbst nach Updates. Gibt es eine neuere Version, erscheint oben ein Balken und ein Klick lädt dir die passende Datei herunter, du musst also nicht mehr auf GitHub nachschauen. Die Prüfung kannst du auch jederzeit in den Einstellungen anstoßen.
 
@@ -52,11 +52,11 @@ There are three tabs.
 
 **Hekate Config.** This is where you set up the boot menu. You decide which entry boots automatically, how long the boot logo stays on screen, whether Auto-NoGC is on, and a few more things. You also get a live preview of the hekate_ipl.ini that ends up in your pack. There is a separate section for blocking Nintendo's servers via DNS. It is on for emuMMC and off for sysMMC by default, and you can flip both.
 
-**Build and SD.** The app downloads the latest versions, builds the finished SD folder and, if you want, copies it straight onto your card. It merges everything, so your saves, the Nintendo folder and your emuMMC stay untouched. Before copying it checks that the pack actually fits and tells you which of your own config files would be overwritten. Both the build and the copy can be cancelled at any time.
+**Build and SD.** If your SD card is already in the PC, one click does it all: "Build pack straight onto F:" downloads everything and writes it to the card right away, no folder needed. Alternatively the app builds the pack into a folder and copies it over later. It merges everything, so your saves, the Nintendo folder and your emuMMC stay untouched. Before copying it checks that the pack actually fits and tells you which of your own config files would be overwritten. Both the build and the copy can be cancelled at any time.
 
 ### Running it
 
-Grab `HATS Builder.exe` (it's portable, just double click it) or run the installer `HATS Builder Setup.exe`. The `Switch-SD-Pack` folder is created right next to the app.
+Grab `HATS Builder.exe` (it's portable, just double click it) or run the installer `HATS Builder Setup.exe`. Unless you pick your own folder, the app creates `Switch-SD-Pack` on your desktop.
 
 The app checks for its own updates on startup. If a newer version exists, a bar appears at the top and one click downloads the right file for you, so you don't have to go hunting on GitHub. You can also trigger the check yourself in the settings.
 

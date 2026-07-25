@@ -34,8 +34,11 @@ function appBaseDir() {
   return app.getAppPath();
 }
 
+// Ohne eigene Wahl landet das Pack auf dem Desktop. Dort findet man es
+// zuverlässig wieder, anders als im Ordner der EXE, die auch im
+// Download-Verzeichnis liegen kann.
 function defaultOutputDir() {
-  return path.join(appBaseDir(), 'Switch-SD-Pack');
+  return path.join(app.getPath('desktop'), 'Switch-SD-Pack');
 }
 
 function defaultSettings() {
@@ -207,16 +210,26 @@ function registerIpc() {
     return result.filePaths[0];
   });
 
-  ipcMain.handle('pack:build', async (_e, { outputDir, selectedIds, hekateConfig }) => {
+  // driveLetter gesetzt: direkt auf die SD-Karte bauen, ohne Zwischenordner.
+  // Dann wird zusammengeführt statt aufgeräumt, damit Spielstände bleiben.
+  ipcMain.handle('pack:build', async (_e, { outputDir, selectedIds, hekateConfig, driveLetter }) => {
     if (building) throw new Error(mt('err.buildRunning'));
+    const aufKarte = Boolean(driveLetter);
+    const ziel = aufKarte ? sd.driveRoot(driveLetter) : outputDir;
     building = true;
     buildAbort = new AbortController();
     try {
       const summary = await builder.buildPack(
-        { outputDir, selectedIds, hekateConfig, signal: buildAbort.signal },
+        { outputDir: ziel, selectedIds, hekateConfig, signal: buildAbort.signal, merge: aufKarte },
         sendProgress
       );
-      saveSettings({ outputDir, selected: selectedIds, hekate: hekateConfig });
+      // Beim Bauen auf die Karte darf der Laufwerksbuchstabe nicht als
+      // Zielordner hängen bleiben, sonst zeigt die App später dorthin.
+      saveSettings(
+        aufKarte
+          ? { selected: selectedIds, hekate: hekateConfig }
+          : { outputDir, selected: selectedIds, hekate: hekateConfig }
+      );
       return summary;
     } finally {
       building = false;
