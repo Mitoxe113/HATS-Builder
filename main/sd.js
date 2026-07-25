@@ -187,4 +187,4 @@ function fmtMb(bytes) {
   return `${Math.round((bytes || 0) / 1048576)} MB`;
 }
 
-module.exports = { listDrives, copyToDrive, previewCopy, isUserConfig, driveSpace, driveRoot };
+module.exports = { listDrives, copyToDrive, previewCopy, isUserConfig };

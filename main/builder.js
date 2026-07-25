@@ -7,7 +7,6 @@ const { COMPONENTS } = require('./components');
 const github = require('./github');
 const { generateIni, normalize } = require('./hekate');
 const { NINTENDO_BLOCK } = require('./hosts');
-const { driveSpace } = require('./sd');
 const { mt } = require('./messages');
 
 // Marker-Datei: kennzeichnet einen von uns erstellten Pack-Ordner.
@@ -162,17 +161,13 @@ function pruneEmptyDirs(root) {
 // Liefert die Dateien zurück, die sich nicht löschen ließen. Der Aufrufer
 // schleppt sie im neuen Marker weiter mit, damit sie beim nächsten Versuch
 // erneut drankommen statt als unsichtbarer Rest liegen zu bleiben.
-// merge: beim Bauen direkt auf die SD-Karte. Dort liegen Spielstände, der
-// Nintendo-Ordner und die emuMMC, also wird nichts Fremdes angefasst und der
-// volle Ordner ist auch kein Grund abzubrechen.
-function preparePackDir(outputDir, { merge = false } = {}) {
+function preparePackDir(outputDir) {
   const uebrig = [];
   if (fs.existsSync(outputDir)) {
     const entries = fs.readdirSync(outputDir);
     if (entries.length > 0) {
       const info = readPackInfo(outputDir);
       if (!info) {
-        if (merge) return uebrig; // fremde Dateien bleiben einfach liegen
         throw new Error(mt('err.folderNotEmpty', outputDir));
       }
       if (Array.isArray(info.files)) {
@@ -187,9 +182,7 @@ function preparePackDir(outputDir, { merge = false } = {}) {
           }
           if (fs.existsSync(p)) uebrig.push(rel);
         }
-        // Auf der SD-Karte nicht aufräumen: leere Ordner können vom Nutzer
-        // stammen, etwa ein noch leerer Nintendo-Ordner.
-        if (!merge) pruneEmptyDirs(outputDir);
+        pruneEmptyDirs(outputDir);
         // Der Marker geht bewusst zuletzt. Scheitert vorher etwas, bleibt er
         // mit seiner Dateiliste liegen und der nächste Versuch räumt weiter
         // auf, statt den Ordner für fremd zu halten.
@@ -244,7 +237,7 @@ function expandSelection(selectedIds) {
 
 // Baut das komplette SD-Pack in outputDir.
 // emit(event) schickt Fortschritt an den Renderer.
-async function buildPack({ outputDir, selectedIds, hekateConfig, signal, merge = false }, emit) {
+async function buildPack({ outputDir, selectedIds, hekateConfig, signal }, emit) {
   const ids = expandSelection(selectedIds);
   // Registry-Reihenfolge beibehalten – sie bestimmt, wer wen überschreibt
   const selected = COMPONENTS.filter((c) => ids.has(c.id));
@@ -256,29 +249,9 @@ async function buildPack({ outputDir, selectedIds, hekateConfig, signal, merge =
     releases[comp.id] = await github.fetchLatest(comp);
   }
 
-  // Beim Bauen direkt auf die Karte vorher grob prüfen, ob der Platz reicht.
-  // Die genaue Größe kennen wir erst nach dem Entpacken, die Summe der
-  // Download-Größen mal zwei ist aber eine brauchbare, sichere Schätzung.
-  if (merge) {
-    const geschaetzt = selected.reduce(
-      (sum, comp) =>
-        sum +
-        comp.assets.reduce((s, rule) => {
-          const a = releases[comp.id].assets.find((x) => rule.match.test(x.name));
-          return s + (a ? a.size : 0);
-        }, 0),
-      0
-    );
-    const { freeBytes } = driveSpace(outputDir);
-    const noetig = geschaetzt * 2 + 50 * 1024 * 1024;
-    if (freeBytes !== null && freeBytes < noetig) {
-      throw new Error(mt('err.notEnoughSpace', `${Math.round(noetig / 1048576)} MB`, `${Math.round(freeBytes / 1048576)} MB`));
-    }
-  }
-
   emit({ type: 'log', text: `Bereite Zielordner vor: ${outputDir}` });
   // Nicht löschbare Reste des letzten Builds weiter mitführen
-  const uebrigeReste = preparePackDir(outputDir, { merge });
+  const uebrigeReste = preparePackDir(outputDir);
 
   const totalSteps = selected.length + 1; // +1 für Konfiguration/Abschluss
   let step = 0;
@@ -382,21 +355,7 @@ async function buildPack({ outputDir, selectedIds, hekateConfig, signal, merge =
     throw err;
   }
 
-  // Auf der SD-Karte darf nicht der ganze Datenträger durchgezählt werden,
-  // dort liegen ja auch Spiele und Spielstände. Dann nur die eigenen Dateien.
-  const eigene = [...new Set(writtenFiles)];
-  const stats = merge
-    ? {
-        files: eigene.length,
-        bytes: eigene.reduce((sum, rel) => {
-          try {
-            return sum + fs.statSync(path.join(outputDir, rel)).size;
-          } catch {
-            return sum;
-          }
-        }, 0),
-      }
-    : dirStats(outputDir);
+  const stats = dirStats(outputDir);
   writeMarker(true);
 
   return { outputDir, components: builtComponents, files: stats.files + 1, bytes: stats.bytes };

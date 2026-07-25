@@ -597,10 +597,8 @@ function handleProgress(event) {
 let buildCancelled = false;
 let copyCancelled = false;
 
-// drive gesetzt: Pack wird direkt auf die Karte gebaut, ohne Zwischenordner.
-async function build(drive) {
+async function build() {
   if (state.building) return;
-  if (drive && !confirm(t('sd.buildConfirm', drive.letter, drive.label))) return;
   state.building = true;
   buildCancelled = false;
   const btn = $('#btn-build');
@@ -619,7 +617,6 @@ async function build(drive) {
       outputDir: state.settings.outputDir,
       selectedIds: state.settings.selected,
       hekateConfig: hekateConf(),
-      driveLetter: drive ? drive.letter : undefined,
     });
     setBuildProgress(100, t('build.done'), '');
     logLine(t('build.logOk'), 'log-ok');
@@ -627,17 +624,9 @@ async function build(drive) {
     const result = $('#build-result');
     result.hidden = false;
     result.textContent = '';
-    result.appendChild(
-      el(
-        'div',
-        null,
-        drive
-          ? t('sd.buildDone', summary.files, fmtBytes(summary.bytes), drive.letter)
-          : t('build.resultOk', summary.files, fmtBytes(summary.bytes))
-      )
-    );
+    result.appendChild(el('div', null, t('build.resultOk', summary.files, fmtBytes(summary.bytes))));
     result.appendChild(el('div', 'versions', summary.components.map((c) => `${c.name} ${c.version}`).join('  ·  ')));
-    toast(drive ? t('sd.buildDone', summary.files, fmtBytes(summary.bytes), drive.letter) : t('toast.buildSuccess'), 'success', 9000);
+    toast(t('toast.buildSuccess'), 'success');
     refreshDrives();
   } catch (err) {
     if (buildCancelled) {
@@ -695,12 +684,6 @@ function renderDrives() {
       card.appendChild(el('div', 'drive-fs-warn', t('sd.fsWarn', drive.fileSystem)));
     }
 
-    // Der schnelle Weg: alles frisch laden und gleich auf die Karte schreiben
-    const direkt = el('button', 'btn btn-primary', t('sd.buildTo', drive.letter));
-    direkt.addEventListener('click', () => build(drive));
-    card.appendChild(direkt);
-
-    // Der zweite Weg für ein Pack, das schon im Zielordner liegt
     const btn = el('button', 'btn btn-secondary', t('sd.copyTo', drive.letter));
     btn.addEventListener('click', () => copyToDrive(drive, btn));
     card.appendChild(btn);

@@ -41,6 +41,28 @@ function defaultOutputDir() {
   return path.join(app.getPath('desktop'), 'Switch-SD-Pack');
 }
 
+// Das Pack braucht einen eigenen Ordner. Wählt jemand den Desktop, die
+// Dokumente oder gleich ein Laufwerk aus, wird darin ein Unterordner angelegt,
+// statt zwischen die vorhandenen Dateien zu schreiben.
+function packFolder(dir) {
+  if (!dir) return defaultOutputDir();
+  const ziel = path.resolve(dir);
+  const istLaufwerk = /^[a-z]:\\?$/i.test(ziel);
+  const sammelordner = ['desktop', 'documents', 'downloads', 'home', 'music', 'pictures', 'videos']
+    .map((k) => {
+      try {
+        return path.resolve(app.getPath(k)).toLowerCase();
+      } catch {
+        return null;
+      }
+    })
+    .filter(Boolean);
+  if (istLaufwerk || sammelordner.includes(ziel.toLowerCase())) {
+    return path.join(ziel, 'Switch-SD-Pack');
+  }
+  return ziel;
+}
+
 function defaultSettings() {
   return {
     selected: COMPONENTS.filter((c) => c.defaultOn).map((c) => c.id),
@@ -76,6 +98,8 @@ function loadSettings() {
   // Solange kein eigener Ordner gewählt wurde, immer dem aktuellen
   // Programm-Standort folgen (wichtig für die portable EXE beim Verschieben).
   if (!settings.outputDirCustom) settings.outputDir = defaults.outputDir;
+  // Auch ein früher gespeicherter Sammelordner bekommt seinen Unterordner
+  else settings.outputDir = packFolder(settings.outputDir);
   // Hekate-Config auf das aktuelle Eintrags-Schema bringen (alte Schlüssel wie
   // fusee/stock aus früheren Versionen fallen weg, neue bekommen Defaults).
   settings.hekate = normalize(settings.hekate);
@@ -206,30 +230,23 @@ function registerIpc() {
       properties: ['openDirectory', 'createDirectory'],
     });
     if (result.canceled || !result.filePaths[0]) return null;
-    saveSettings({ outputDir: result.filePaths[0], outputDirCustom: true });
-    return result.filePaths[0];
+    // Wer den Desktop wählt, meint einen Ordner darauf, nicht den Desktop selbst
+    const ziel = packFolder(result.filePaths[0]);
+    saveSettings({ outputDir: ziel, outputDirCustom: true });
+    return ziel;
   });
 
-  // driveLetter gesetzt: direkt auf die SD-Karte bauen, ohne Zwischenordner.
-  // Dann wird zusammengeführt statt aufgeräumt, damit Spielstände bleiben.
-  ipcMain.handle('pack:build', async (_e, { outputDir, selectedIds, hekateConfig, driveLetter }) => {
+  ipcMain.handle('pack:build', async (_e, { outputDir, selectedIds, hekateConfig }) => {
     if (building) throw new Error(mt('err.buildRunning'));
-    const aufKarte = Boolean(driveLetter);
-    const ziel = aufKarte ? sd.driveRoot(driveLetter) : outputDir;
+    const ziel = packFolder(outputDir);
     building = true;
     buildAbort = new AbortController();
     try {
       const summary = await builder.buildPack(
-        { outputDir: ziel, selectedIds, hekateConfig, signal: buildAbort.signal, merge: aufKarte },
+        { outputDir: ziel, selectedIds, hekateConfig, signal: buildAbort.signal },
         sendProgress
       );
-      // Beim Bauen auf die Karte darf der Laufwerksbuchstabe nicht als
-      // Zielordner hängen bleiben, sonst zeigt die App später dorthin.
-      saveSettings(
-        aufKarte
-          ? { selected: selectedIds, hekate: hekateConfig }
-          : { outputDir, selected: selectedIds, hekate: hekateConfig }
-      );
+      saveSettings({ outputDir: ziel, selected: selectedIds, hekate: hekateConfig });
       return summary;
     } finally {
       building = false;
