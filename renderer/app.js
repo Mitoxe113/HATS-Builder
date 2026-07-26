@@ -763,7 +763,18 @@ let updateFile = null; // Pfad der bereits heruntergeladenen Datei
 // Sprachwechsel sie nicht auf "Herunterladen" zurücksetzt.
 function renderUpdateButton() {
   const btn = $('#btn-update-download');
-  if (btn) btn.textContent = updateFile ? t('update.openFolder') : t('update.download');
+  if (btn) btn.textContent = updateFile ? t('update.restartNow') : t('update.install');
+}
+
+// Spielt das geladene Update ein. Die App beendet sich dabei und kommt in der
+// neuen Fassung zurück. Klappt es nicht, zeigen wir wenigstens die Datei.
+async function applyUpdate() {
+  try {
+    await api.installUpdate(updateFile);
+  } catch (err) {
+    toast(err.message, 'error', 9000);
+    api.revealFile(updateFile);
+  }
 }
 
 // Prüft, ob eine neuere Version von HATS Builder vorliegt.
@@ -796,8 +807,9 @@ async function checkForUpdate({ silent = true } = {}) {
 // Ein einziger Handler für beide Zustände. Früher hingen hier zwei Handler
 // gleichzeitig, wodurch "Ordner öffnen" den Download erneut angestoßen hat.
 async function onUpdateButton() {
+  // Schon geladen: dann jetzt einspielen
   if (updateFile) {
-    api.revealFile(updateFile);
+    applyUpdate();
     return;
   }
   if (!updateInfo || !updateInfo.asset) return;
@@ -808,6 +820,8 @@ async function onUpdateButton() {
     updateFile = await api.downloadUpdate(updateInfo.asset);
     $('#update-text').textContent = t('update.ready', updateInfo.asset.name);
     renderUpdateButton();
+    // Direkt anbieten, den Neustart aber dem Nutzer überlassen
+    if (confirm(t('update.readyRestart', updateInfo.latest))) applyUpdate();
   } catch (err) {
     toast(err.message, 'error', 9000);
   } finally {

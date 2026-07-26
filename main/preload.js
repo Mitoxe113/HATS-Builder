@@ -21,6 +21,7 @@ contextBridge.exposeInMainWorld('api', {
   checkUpdate: () => ipcRenderer.invoke('update:check'),
   downloadUpdate: (asset) => ipcRenderer.invoke('update:download', asset),
   revealFile: (file) => ipcRenderer.invoke('update:reveal', file),
+  installUpdate: (file) => ipcRenderer.invoke('update:install', file),
   onProgress: (callback) => {
     ipcRenderer.on('progress', (_e, event) => callback(event));
   },

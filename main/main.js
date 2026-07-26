@@ -326,6 +326,14 @@ function registerIpc() {
     if (file && fs.existsSync(file)) shell.showItemInFolder(file);
   });
 
+  // Spielt das geladene Update ein und startet die App neu. Mitten in einem
+  // Build oder einer Kopie wird das abgelehnt, sonst bliebe etwas Halbes zurück.
+  ipcMain.handle('update:install', async (_e, file) => {
+    if (building || copying || downloadingUpdate) throw new Error(mt('err.updateBusy'));
+    await updater.install(file, app);
+    return true;
+  });
+
   ipcMain.handle('shell:openExternal', (_e, url) => {
     if (/^https:\/\//.test(url)) shell.openExternal(url);
   });

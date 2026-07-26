@@ -21,7 +21,7 @@ Es gibt drei Tabs.
 
 Nimm `HATS Builder.exe` (die ist portabel, einfach doppelklicken) oder führe den Installer `HATS Builder Setup.exe` aus. Die App legt sich den Ordner `Switch-SD-Pack` auf dem Desktop an. Wählst du selbst einen Ort wie den Desktop oder die Dokumente, entsteht dort ebenfalls ein eigener Unterordner, damit nichts zwischen deine anderen Dateien gerät.
 
-Die App sucht beim Start selbst nach Updates. Gibt es eine neuere Version, erscheint oben ein Balken und ein Klick lädt dir die passende Datei herunter, du musst also nicht mehr auf GitHub nachschauen. Die Prüfung kannst du auch jederzeit in den Einstellungen anstoßen.
+Die App hält sich selbst aktuell. Beim Start schaut sie nach, ob es etwas Neueres gibt, und blendet dann oben einen Balken ein. Ein Klick lädt die passende Datei, danach startet sich die App neu und ist auf dem neuen Stand. Auf GitHub musst du dafür nicht mehr. Die Prüfung kannst du auch jederzeit in den Einstellungen anstoßen.
 
 ### Selbst bauen
 
@@ -58,7 +58,7 @@ There are three tabs.
 
 Grab `HATS Builder.exe` (it's portable, just double click it) or run the installer `HATS Builder Setup.exe`. The app creates a `Switch-SD-Pack` folder on your desktop. If you pick a place like the desktop or your documents yourself, it creates a subfolder there too, so nothing ends up among your other files.
 
-The app checks for its own updates on startup. If a newer version exists, a bar appears at the top and one click downloads the right file for you, so you don't have to go hunting on GitHub. You can also trigger the check yourself in the settings.
+The app keeps itself up to date. On startup it checks whether something newer is out and shows a bar at the top. One click downloads the right file, then the app restarts itself on the new version. No trip to GitHub needed. You can also trigger the check yourself in the settings.
 
 ### Building it yourself
 

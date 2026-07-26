@@ -88,6 +88,22 @@ const M = {
     de: 'Auf der Karte ist zu wenig Platz. Gebraucht werden {0}, frei sind {1}.',
     en: 'Not enough space on the card. {0} needed, {1} free.',
   },
+  'err.updateMissing': {
+    de: 'Die heruntergeladene Datei ist nicht mehr da. Bitte das Update noch einmal laden.',
+    en: 'The downloaded file is gone. Please download the update again.',
+  },
+  'err.updateStartFailed': {
+    de: 'Das Update konnte nicht gestartet werden. Die Datei liegt in deinen Downloads, du kannst sie von Hand ausführen.',
+    en: 'The update could not be started. The file is in your downloads, you can run it manually.',
+  },
+  'err.updateNoTarget': {
+    de: 'Die laufende EXE konnte nicht gefunden werden, das Update lässt sich so nicht einspielen.',
+    en: 'Could not locate the running EXE, so the update cannot be applied this way.',
+  },
+  'err.updateBusy': {
+    de: 'Es läuft gerade ein Vorgang. Bitte erst abwarten, dann neu starten.',
+    en: 'Something is still running. Please wait for it to finish, then restart.',
+  },
   'err.badUpdateUrl': {
     de: 'Unerwartete Download-Adresse, das Update wurde abgebrochen.',
     en: 'Unexpected download address, the update was cancelled.',
