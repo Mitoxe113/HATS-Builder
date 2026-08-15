@@ -382,6 +382,17 @@ const COMPONENTS = [
     assets: [{ match: /^Lockpick_RCM\.bin$/, action: 'copy', target: 'bootloader/payloads/Lockpick_RCM.bin' }],
   },
   {
+    id: 'hwflytoolbox',
+    name: 'HWFLY Toolbox',
+    repo: 'hwfly-nx/hwfly-toolbox',
+    category: 'tools',
+    description: {
+      de: 'Werkzeugkasten für HWFLY-Modchips: Chip-Firmware und SD-Loader aktualisieren, Zustand prüfen. Wird über Hekate → Payloads gestartet.',
+      en: 'Toolbox for HWFLY modchips: update the chip firmware and SD loader, check its state. Launched via Hekate → Payloads.',
+    },
+    assets: [{ match: /^hwfly_toolbox\.bin$/, action: 'copy', target: 'bootloader/payloads/hwfly_toolbox.bin' }],
+  },
+  {
     id: 'hatstools',
     name: 'HATS-Tools',
     repo: 'sthetix/HATS-Tools',
