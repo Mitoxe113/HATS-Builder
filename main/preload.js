@@ -18,7 +18,7 @@ contextBridge.exposeInMainWorld('api', {
   cancelCopy: () => ipcRenderer.invoke('sd:cancel'),
   openExternal: (url) => ipcRenderer.invoke('shell:openExternal', url),
   openPath: (dir) => ipcRenderer.invoke('shell:openPath', dir),
-  checkUpdate: () => ipcRenderer.invoke('update:check'),
+  checkUpdate: (force = false) => ipcRenderer.invoke('update:check', { force }),
   downloadUpdate: (asset) => ipcRenderer.invoke('update:download', asset),
   revealFile: (file) => ipcRenderer.invoke('update:reveal', file),
   installUpdate: (file) => ipcRenderer.invoke('update:install', file),

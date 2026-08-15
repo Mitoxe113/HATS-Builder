@@ -757,6 +757,7 @@ async function copyToDrive(drive, btn) {
 // ── Selbst-Update ────────────────────────────────────────────────────────────
 let updateInfo = null;
 let updateFile = null; // Pfad der bereits heruntergeladenen Datei
+let tokenHinweisGezeigt = false;
 
 // Der Knopf hat zwei Zustände: zuerst herunterladen, danach Ordner öffnen.
 // Die Beschriftung wird hier gesetzt statt über data-i18n, damit ein
@@ -785,9 +786,16 @@ async function checkForUpdate({ silent = true } = {}) {
 
   let info = null;
   try {
-    info = await api.checkUpdate();
+    // Von Hand geprüft heißt: wirklich nachschauen, nicht den Cache befragen
+    info = await api.checkUpdate(!silent);
   } catch {
     info = { available: false, error: 'ipc' };
+  }
+
+  // Ein abgelehntes Token einmal deutlich melden. Gearbeitet wird ohne weiter.
+  if (info && info.tokenRejected && !tokenHinweisGezeigt) {
+    tokenHinweisGezeigt = true;
+    toast(t('token.rejected'), 'error', 12000);
   }
 
   if (info && info.available) {

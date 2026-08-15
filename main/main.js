@@ -303,12 +303,16 @@ function registerIpc() {
   });
 
   // ── Selbst-Update ─────────────────────────────────────────────────────────
-  ipcMain.handle('update:check', async () => {
+  ipcMain.handle('update:check', async (_e, opts) => {
+    const force = Boolean(opts && opts.force);
     try {
-      return await updater.check(app.getVersion(), Boolean(process.env.PORTABLE_EXECUTABLE_DIR));
+      const info = await updater.check(app.getVersion(), Boolean(process.env.PORTABLE_EXECUTABLE_DIR), {
+        force,
+      });
+      return { ...info, tokenRejected: github.wasTokenRejected() };
     } catch (err) {
-      // Kein Netz, privates Repo ohne Token o. Ä.: leise scheitern, kein Banner
-      return { available: false, error: err.message };
+      // Kein Netz oder Ähnliches: leise scheitern, kein Banner
+      return { available: false, error: err.message, tokenRejected: github.wasTokenRejected() };
     }
   });
 

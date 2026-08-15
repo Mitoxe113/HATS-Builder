@@ -44,8 +44,10 @@ function pickAsset(assets, portable) {
   );
 }
 
-async function check(currentVersion, portable) {
-  const release = await github.fetchLatestRelease(REPO);
+// force: bei der Prüfung von Hand nicht den Cache nehmen, sondern wirklich
+// nachschauen. Sonst behauptet die App bis zu 15 Minuten lang, alles sei aktuell.
+async function check(currentVersion, portable, { force = false } = {}) {
+  const release = await github.fetchLatestRelease(REPO, { force });
   const latest = String(release.tag || '').replace(/^v/i, '');
   const asset = pickAsset(release.assets || [], portable);
   return {

@@ -45,6 +45,8 @@ window.I18N = {
     'token.create': 'Token erstellen',
     'token.saved': 'Token gespeichert. Ich prüfe die Versionen neu …',
     'token.removed': 'Token entfernt.',
+    'token.rejected':
+      'GitHub hat dein Token abgelehnt, es ist wohl abgelaufen. Ich frage die Versionen jetzt ohne Token ab. Am besten leerst du das Feld in den Einstellungen oder legst ein neues Token an.',
 
     'badge.loading': 'Version wird geladen …',
     'badge.rateLimit': 'Rate-Limit',
@@ -184,6 +186,8 @@ window.I18N = {
     'token.create': 'Create token',
     'token.saved': "Token saved. I'll re-check the versions …",
     'token.removed': 'Token removed.',
+    'token.rejected':
+      'GitHub rejected your token, it has probably expired. I am fetching the versions without it for now. Best to clear the field in the settings or create a new token.',
 
     'badge.loading': 'Loading version …',
     'badge.rateLimit': 'Rate limit',

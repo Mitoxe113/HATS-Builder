@@ -29,14 +29,33 @@ function init(userDataDir) {
   }
 }
 
+// Merkt sich, ob GitHub das hinterlegte Token abgelehnt hat. Dann wird ohne
+// Token weitergearbeitet und die Oberfläche kann darauf hinweisen.
+let tokenAbgelehnt = false;
+
 function setToken(value) {
   token = String(value || '').trim();
+  tokenAbgelehnt = false;
 }
 
-function headers(extra = {}) {
+function wasTokenRejected() {
+  return tokenAbgelehnt;
+}
+
+function headers(extra = {}, ohneToken = false) {
   const h = { 'User-Agent': 'HATS-Builder', Accept: 'application/vnd.github+json', ...extra };
-  if (token) h.Authorization = `Bearer ${token}`;
+  if (token && !ohneToken) h.Authorization = `Bearer ${token}`;
   return h;
+}
+
+// Ein abgelaufenes oder falsch eingefügtes Token darf nicht die ganze App
+// lahmlegen. Lehnt GitHub es ab, wird die Anfrage einmal ohne Token wiederholt.
+// Für öffentliche Repos genügt das vollkommen.
+async function apiFetch(url, extra) {
+  const res = await fetch(url, { headers: headers(extra) });
+  if (res.status !== 401 || !token) return res;
+  tokenAbgelehnt = true;
+  return fetch(url, { headers: headers(extra, true) });
 }
 
 let persistTimer = null;
@@ -155,9 +174,7 @@ async function cached(key, force, fetcher) {
 
 function fetchLatestRelease(repo, { force = false } = {}) {
   return cached(repo, force, async (etag) => {
-    const res = await fetch(`https://api.github.com/repos/${repo}/releases/latest`, {
-      headers: headers(etag ? { 'If-None-Match': etag } : {}),
-    });
+    const res = await apiFetch(`https://api.github.com/repos/${repo}/releases/latest`, etag ? { 'If-None-Match': etag } : {});
     if (res.status === 304) return null;
     checkStatus(res);
     return { data: slim(await res.json()), etag: res.headers.get('etag') };
@@ -167,9 +184,7 @@ function fetchLatestRelease(repo, { force = false } = {}) {
 // Kein Release vorhanden → neuestes Branch-Archiv als synthetisches Asset.
 function fetchLatestBranch(repo, branch, { force = false } = {}) {
   return cached(`${repo}#${branch}`, force, async (etag) => {
-    const res = await fetch(`https://api.github.com/repos/${repo}/commits/${branch}`, {
-      headers: headers(etag ? { 'If-None-Match': etag } : {}),
-    });
+    const res = await apiFetch(`https://api.github.com/repos/${repo}/commits/${branch}`, etag ? { 'If-None-Match': etag } : {});
     if (res.status === 304) return null;
     checkStatus(res);
     const commit = await res.json();
@@ -204,4 +219,4 @@ function fetchLatest(component, opts = {}) {
   return fetchLatestRelease(component.repo, opts);
 }
 
-module.exports = { init, setToken, flush, fetchLatestRelease, fetchLatestBranch, fetchLatest };
+module.exports = { init, setToken, wasTokenRejected, flush, fetchLatestRelease, fetchLatestBranch, fetchLatest };
