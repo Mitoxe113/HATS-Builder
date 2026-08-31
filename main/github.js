@@ -34,8 +34,12 @@ function init(userDataDir) {
 let tokenAbgelehnt = false;
 
 function setToken(value) {
-  token = String(value || '').trim();
-  tokenAbgelehnt = false;
+  const neu = String(value || '').trim();
+  // Nur bei einem wirklich anderen Token wieder Vertrauen fassen. Sonst würde
+  // jedes Speichern der Einstellungen (auch ein verschobener Regler) das längst
+  // abgelehnte Token erneut ausprobieren lassen.
+  if (neu !== token) tokenAbgelehnt = false;
+  token = neu;
 }
 
 function wasTokenRejected() {
@@ -51,9 +55,14 @@ function headers(extra = {}, ohneToken = false) {
 // Ein abgelaufenes oder falsch eingefügtes Token darf nicht die ganze App
 // lahmlegen. Lehnt GitHub es ab, wird die Anfrage einmal ohne Token wiederholt.
 // Für öffentliche Repos genügt das vollkommen.
+//
+// Danach wird das Token gar nicht mehr mitgeschickt. Täten wir das, kostete
+// jede Abfrage zwei Zugriffe (erst die abgelehnte, dann die richtige), und mit
+// über 30 Komponenten wäre das Stundenlimit von 60 nach einem einzigen
+// Durchlauf aufgebraucht.
 async function apiFetch(url, extra) {
-  const res = await fetch(url, { headers: headers(extra) });
-  if (res.status !== 401 || !token) return res;
+  const res = await fetch(url, { headers: headers(extra, tokenAbgelehnt) });
+  if (res.status !== 401 || !token || tokenAbgelehnt) return res;
   tokenAbgelehnt = true;
   return fetch(url, { headers: headers(extra, true) });
 }

@@ -120,6 +120,53 @@ const M = {
     de: 'Im Zielordner liegt kein fertiges Pack. Bitte zuerst das Pack erstellen.',
     en: 'There is no finished pack in the target folder. Please create the pack first.',
   },
+
+  // Fortschrittsprotokoll beim Bauen. Der Nutzer liest es mit, deshalb gehört
+  // es genauso in beide Sprachen wie die Oberfläche.
+  'log.checkVersions': {
+    de: 'Ich frage die neuesten Versionen ab ({0} Komponenten) …',
+    en: 'Checking the latest versions ({0} components) …',
+  },
+  'log.cached': {
+    de: '{0} liegt schon im Zwischenspeicher',
+    en: '{0} is already cached',
+  },
+  'log.prepareDir': {
+    de: 'Zielordner wird vorbereitet: {0}',
+    en: 'Preparing the target folder: {0}',
+  },
+  'log.extracting': {
+    de: '{0}: {1} wird entpackt',
+    en: '{0}: extracting {1}',
+  },
+  'log.copying': {
+    de: '{0}: {1} wird kopiert',
+    en: '{0}: copying {1}',
+  },
+  'log.iniWritten': {
+    de: 'bootloader/hekate_ipl.ini geschrieben',
+    en: 'bootloader/hekate_ipl.ini written',
+  },
+  'log.hostsWritten': {
+    de: 'atmosphere/hosts/{0} geschrieben, Nintendos Server sind geblockt',
+    en: 'atmosphere/hosts/{0} written, Nintendo servers are blocked',
+  },
+  'step.hekate': {
+    de: 'Hekate-Konfiguration',
+    en: 'Hekate configuration',
+  },
+  'dialog.chooseOutput': {
+    de: 'Zielordner für das SD-Pack wählen',
+    en: 'Choose the target folder for the SD pack',
+  },
+  'sd.noName': {
+    de: 'Ohne Namen',
+    en: 'Unnamed',
+  },
+  'sd.unknownFs': {
+    de: 'unbekannt',
+    en: 'unknown',
+  },
 };
 
 function mt(key, ...args) {

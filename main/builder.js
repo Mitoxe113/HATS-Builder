@@ -38,7 +38,7 @@ async function downloadAsset(component, release, asset, emit, signal) {
   try {
     const st = fs.statSync(dest);
     if (asset.size ? st.size === asset.size : st.size > 0) {
-      emit({ type: 'log', text: `${asset.name} bereits im Cache` });
+      emit({ type: 'log', text: mt('log.cached', asset.name) });
       return dest;
     }
   } catch {
@@ -174,7 +174,16 @@ function preparePackDir(outputDir) {
         // Nur die von uns zuletzt geschriebenen Dateien entfernen – vom Nutzer
         // hinzugefügte Dateien im selben Ordner bleiben unangetastet.
         for (const rel of info.files) {
-          const p = path.join(outputDir, rel);
+          // Die Liste steht in einer Datei im Zielordner und kann verändert,
+          // beschädigt oder aus fremder Hand kopiert sein. Ein Eintrag wie
+          // "../wichtig.txt" würde sonst außerhalb des Ordners löschen.
+          let p;
+          try {
+            p = safeJoin(outputDir, rel);
+          } catch {
+            continue;
+          }
+          if (p === path.resolve(outputDir)) continue;
           try {
             if (fs.statSync(p).isFile()) fs.rmSync(p, { force: true });
           } catch {
@@ -242,14 +251,14 @@ async function buildPack({ outputDir, selectedIds, hekateConfig, signal }, emit)
   // Registry-Reihenfolge beibehalten – sie bestimmt, wer wen überschreibt
   const selected = COMPONENTS.filter((c) => ids.has(c.id));
 
-  emit({ type: 'log', text: `Prüfe neueste Versionen (${selected.length} Komponenten) …` });
+  emit({ type: 'log', text: mt('log.checkVersions', selected.length) });
   const releases = {};
   for (const comp of selected) {
     throwIfAborted(signal);
     releases[comp.id] = await github.fetchLatest(comp);
   }
 
-  emit({ type: 'log', text: `Bereite Zielordner vor: ${outputDir}` });
+  emit({ type: 'log', text: mt('log.prepareDir', outputDir) });
   // Nicht löschbare Reste des letzten Builds weiter mitführen
   const uebrigeReste = preparePackDir(outputDir);
 
@@ -306,7 +315,7 @@ async function buildPack({ outputDir, selectedIds, hekateConfig, signal }, emit)
         const filePath = await downloadAsset(comp, release, asset, emit, signal);
         emit({
           type: 'log',
-          text: `${comp.name}: ${rule.action === 'extract' ? 'entpacke' : 'kopiere'} ${asset.name}`,
+          text: mt(rule.action === 'extract' ? 'log.extracting' : 'log.copying', comp.name, asset.name),
         });
         applyAsset(rule, filePath, outputDir, writtenFiles);
       }
@@ -329,13 +338,13 @@ async function buildPack({ outputDir, selectedIds, hekateConfig, signal }, emit)
 
     // Hekate-Boot-Menü-Konfiguration schreiben
     step += 1;
-    emit({ type: 'step', component: null, name: 'Hekate-Konfiguration', version: '', step, totalSteps });
+    emit({ type: 'step', component: null, name: mt('step.hekate'), version: '', step, totalSteps });
     const hk = normalize(hekateConfig);
     const bootloaderDir = path.join(outputDir, 'bootloader');
     fs.mkdirSync(bootloaderDir, { recursive: true });
     fs.writeFileSync(path.join(bootloaderDir, 'hekate_ipl.ini'), generateIni(hk));
     writtenFiles.push(path.join('bootloader', 'hekate_ipl.ini'));
-    emit({ type: 'log', text: 'bootloader/hekate_ipl.ini geschrieben' });
+    emit({ type: 'log', text: mt('log.iniWritten') });
 
     // Nintendo-Server blocken (Atmosphère DNS-MITM, 90DNS-Liste)
     const hostsDir = path.join(outputDir, 'atmosphere', 'hosts');
@@ -343,7 +352,7 @@ async function buildPack({ outputDir, selectedIds, hekateConfig, signal }, emit)
       fs.mkdirSync(hostsDir, { recursive: true });
       fs.writeFileSync(path.join(hostsDir, file), NINTENDO_BLOCK);
       writtenFiles.push(path.join('atmosphere', 'hosts', file));
-      emit({ type: 'log', text: `atmosphere/hosts/${file} geschrieben (Nintendo-Server geblockt)` });
+      emit({ type: 'log', text: mt('log.hostsWritten', file) });
     };
     if (hk.blockNintendoEmu) writeHost('emummc.txt');
     if (hk.blockNintendoSys) writeHost('sysmmc.txt');
@@ -355,10 +364,20 @@ async function buildPack({ outputDir, selectedIds, hekateConfig, signal }, emit)
     throw err;
   }
 
-  const stats = dirStats(outputDir);
+  // Der Marker kommt vor der Statistik. Andersherum würde ein Lesefehler beim
+  // Zählen (gesperrter Ordner, Virenscanner) den Marker verhindern, und der
+  // fertige Ordner gälte beim nächsten Build als fremd und wäre blockiert.
   writeMarker(true);
 
-  return { outputDir, components: builtComponents, files: stats.files + 1, bytes: stats.bytes };
+  // Die Zahlen sind reine Anzeige, das Pack ist auch ohne sie fertig.
+  let stats = { files: 0, bytes: 0 };
+  try {
+    stats = dirStats(outputDir);
+  } catch {
+    /* Zielordner gerade nicht lesbar */
+  }
+
+  return { outputDir, components: builtComponents, files: stats.files, bytes: stats.bytes };
 }
 
 function readPackInfo(dir) {

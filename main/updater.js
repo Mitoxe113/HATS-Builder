@@ -36,10 +36,13 @@ function isNewer(candidate, current) {
 
 // Passende Datei zur laufenden Installation: portable oder Installer.
 function pickAsset(assets, portable) {
-  const wanted = portable ? /portable\.exe$/i : /setup\.exe$/i;
+  const passend = portable ? /portable\.exe$/i : /setup\.exe$/i;
+  const andere = portable ? /setup\.exe$/i : /portable\.exe$/i;
   return (
-    assets.find((a) => wanted.test(a.name)) ||
-    assets.find((a) => /\.exe$/i.test(a.name)) ||
+    assets.find((a) => passend.test(a.name)) ||
+    // Notfalls irgendeine EXE, aber niemals die der anderen Bauart. Ein
+    // Installer, der über die portable EXE kopiert wird, macht sie unbrauchbar.
+    assets.find((a) => /\.exe$/i.test(a.name) && !andere.test(a.name)) ||
     null
   );
 }
@@ -147,13 +150,18 @@ function buildPortableScript(datei, ziel, pid, marker) {
     'Start-Sleep -Milliseconds 700',
     `$neu = '${psQuote(datei)}'`,
     `$alt = '${psQuote(ziel)}'`,
+    '$kopiert = $false',
     // Mehrere Versuche, falls Windows die Datei noch kurz festhält
     'for ($i = 0; $i -lt 40; $i++) {',
-    '  try { Copy-Item -LiteralPath $neu -Destination $alt -Force -ErrorAction Stop; break }',
+    '  try { Copy-Item -LiteralPath $neu -Destination $alt -Force -ErrorAction Stop; $kopiert = $true; break }',
     '  catch { Start-Sleep -Milliseconds 500 }',
     '}',
-    'Start-Process -FilePath $alt',
-    'Remove-Item -LiteralPath $neu -Force',
+    // Die geladene Datei darf erst weg, wenn das Kopieren geklappt hat. Sonst
+    // stünde der Nutzer ohne alte und ohne neue Fassung da. Klappt es nicht,
+    // startet stattdessen die geladene Datei selbst, dann läuft wenigstens die
+    // neue Version.
+    'if ($kopiert) { Start-Process -FilePath $alt; Remove-Item -LiteralPath $neu -Force }',
+    'else { Start-Process -FilePath $neu }',
     `Remove-Item -LiteralPath '${psQuote(marker)}' -Force`,
     'Remove-Item -LiteralPath $MyInvocation.MyCommand.Path -Force',
     '',

@@ -34,8 +34,8 @@ async function listDrives() {
     .filter((d) => d.DeviceID && Number(d.Size) > 0)
     .map((d) => ({
       letter: d.DeviceID,
-      label: d.VolumeName || 'Ohne Namen',
-      fileSystem: d.FileSystem || 'unbekannt',
+      label: d.VolumeName || mt('sd.noName'),
+      fileSystem: d.FileSystem || mt('sd.unknownFs'),
       size: Number(d.Size) || 0,
       free: Number(d.FreeSpace) || 0,
       // Die Switch läuft am zuverlässigsten mit FAT32; exFAT kann bei
@@ -44,10 +44,15 @@ async function listDrives() {
     }));
 }
 
+// Dateien, die nur den Pack-Ordner beschreiben und auf der Karte nichts
+// verloren haben.
+const NICHT_KOPIEREN = new Set(['hats-pack.json']);
+
 function listFiles(dir) {
   const files = [];
   const walk = (d, rel) => {
     for (const entry of fs.readdirSync(d, { withFileTypes: true })) {
+      if (!rel && NICHT_KOPIEREN.has(entry.name)) continue;
       const abs = path.join(d, entry.name);
       const relPath = rel ? `${rel}/${entry.name}` : entry.name;
       if (entry.isDirectory()) walk(abs, relPath);

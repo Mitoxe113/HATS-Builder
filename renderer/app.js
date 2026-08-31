@@ -904,6 +904,9 @@ async function main() {
   tokenInput.value = state.settings.githubToken || '';
   $('#btn-save-token').addEventListener('click', async () => {
     state.settings.githubToken = tokenInput.value.trim();
+    // Bei einem neuen Token darf der Hinweis wieder kommen, sonst bliebe ein
+    // zweites kaputtes Token unbemerkt.
+    tokenHinweisGezeigt = false;
     await api.saveSettings(state.settings);
     toast(state.settings.githubToken ? t('token.saved') : t('token.removed'), 'success');
     checkReleases(true);

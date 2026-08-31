@@ -66,7 +66,9 @@ function packFolder(dir) {
 function defaultSettings() {
   return {
     selected: COMPONENTS.filter((c) => c.defaultOn).map((c) => c.id),
-    hekate: DEFAULT_HEKATE,
+    // Kopie, nicht die Vorlage selbst. Sonst könnte eine Änderung an den
+    // Einstellungen den Auslieferungszustand für den Rest des Laufs verbiegen.
+    hekate: structuredClone(DEFAULT_HEKATE),
     outputDir: defaultOutputDir(),
     outputDirCustom: false, // true, sobald der Nutzer bewusst „Ändern“ gewählt hat
     githubToken: '',
@@ -226,7 +228,7 @@ function registerIpc() {
 
   ipcMain.handle('pack:chooseOutput', async () => {
     const result = await dialog.showOpenDialog(win, {
-      title: 'Zielordner für das SD-Pack wählen',
+      title: mt('dialog.chooseOutput'),
       properties: ['openDirectory', 'createDirectory'],
     });
     if (result.canceled || !result.filePaths[0]) return null;
@@ -347,15 +349,28 @@ function registerIpc() {
   });
 }
 
-app.whenReady().then(() => {
-  const startup = loadSettings();
-  github.init(app.getPath('userData'));
-  github.setToken(startup.githubToken);
-  messages.setLang(startup.language);
-  builder.init(app.getPath('userData'));
-  registerIpc();
-  createWindow();
-});
+// Zwei laufende Fenster würden sich in denselben Zielordner und in dieselbe
+// Einstellungsdatei schreiben. Ein zweiter Start holt deshalb nur das
+// vorhandene Fenster nach vorne.
+if (!app.requestSingleInstanceLock()) {
+  app.quit();
+} else {
+  app.on('second-instance', () => {
+    if (!win || win.isDestroyed()) return;
+    if (win.isMinimized()) win.restore();
+    win.focus();
+  });
+
+  app.whenReady().then(() => {
+    const startup = loadSettings();
+    github.init(app.getPath('userData'));
+    github.setToken(startup.githubToken);
+    messages.setLang(startup.language);
+    builder.init(app.getPath('userData'));
+    registerIpc();
+    createWindow();
+  });
+}
 
 app.on('window-all-closed', () => app.quit());
 // Ausstehenden (gebündelten) Cache-Schreibvorgang vor dem Beenden sichern
