@@ -27,7 +27,10 @@ function throwIfAborted(signal) {
 }
 
 async function downloadAsset(component, release, asset, emit, signal) {
-  const dir = path.join(cacheDir, component.id, release.tag.replace(/[^\w.-]/g, '_'));
+  // Ein Release ohne Tag darf den Download nicht kippen, der Ordnername ist nur
+  // zur Unterscheidung da.
+  const tagOrdner = String(release.tag || 'ohne-tag').replace(/[^\w.-]/g, '_') || 'ohne-tag';
+  const dir = path.join(cacheDir, component.id, tagOrdner);
   fs.mkdirSync(dir, { recursive: true });
   const dest = path.join(dir, asset.name);
 
@@ -227,7 +230,11 @@ function dirStats(dir) {
 // erzeugen.
 function expandSelection(selectedIds) {
   const byId = new Map(COMPONENTS.map((c) => [c.id, c]));
-  const set = new Set((selectedIds || []).filter((id) => byId.has(id)));
+  // Eine beschädigte oder von Hand verbogene settings.json kann hier alles
+  // liefern. Was keine Liste ist, wird als leere Auswahl behandelt, dann baut
+  // die App wenigstens das Pflichtprogramm statt abzustürzen.
+  const roh = Array.isArray(selectedIds) ? selectedIds : [];
+  const set = new Set(roh.filter((id) => byId.has(id)));
   for (const c of COMPONENTS) if (c.required) set.add(c.id);
   let grew = true;
   while (grew) {

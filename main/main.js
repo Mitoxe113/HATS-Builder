@@ -97,6 +97,13 @@ function loadSettings() {
   } catch {
     return defaults;
   }
+  // Eine beschädigte oder von Hand verbogene settings.json darf die App nicht
+  // lahmlegen. Was nicht die erwartete Form hat, fällt auf den Standard zurück.
+  if (!Array.isArray(settings.selected)) settings.selected = defaults.selected;
+  if (typeof settings.outputDir !== 'string' || !settings.outputDir) settings.outputDir = defaults.outputDir;
+  if (typeof settings.githubToken !== 'string') settings.githubToken = '';
+  settings.outputDirCustom = settings.outputDirCustom === true;
+
   // Solange kein eigener Ordner gewählt wurde, immer dem aktuellen
   // Programm-Standort folgen (wichtig für die portable EXE beim Verschieben).
   if (!settings.outputDirCustom) settings.outputDir = defaults.outputDir;

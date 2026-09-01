@@ -471,7 +471,15 @@ function buildControl(setting, afterChange) {
   const checkbox = document.createElement('input');
   checkbox.type = 'checkbox';
   checkbox.checked = Boolean(hekateConf()[setting.key]);
-  checkbox.addEventListener('change', () => commit(checkbox.checked));
+  checkbox.addEventListener('change', () => {
+    // Manche Schalter schützen vor etwas. Wer so einen abschaltet, bekommt
+    // vorher zu lesen, worauf er sich einlässt, und muss es bestätigen.
+    if (!checkbox.checked && setting.confirmOffKey && !confirm(t(setting.confirmOffKey))) {
+      checkbox.checked = true;
+      return;
+    }
+    commit(checkbox.checked);
+  });
   toggleLabel.appendChild(checkbox);
   toggleLabel.appendChild(el('span', 'toggle-track'));
   return toggleLabel;
@@ -520,14 +528,27 @@ function updateIniPreview() {
   }, 120);
 }
 
-const DNS_OPTIONS = [
-  { key: 'blockNintendoEmu', nameKey: 'dns.emu', descKey: 'dns.emu.desc' },
-  { key: 'blockNintendoSys', nameKey: 'dns.sys', descKey: 'dns.sys.desc' },
-];
+// Wer die Sperre abschaltet, riskiert eine Konsolensperre. Deshalb hängt an
+// beiden Schaltern eine Rückfrage.
+function dnsOptions() {
+  // Auf der sysMMC ist die Sperre nur dann wirklich kritisch, wenn dort auch
+  // CFW startet. Wer die sysMMC sauber als OFW nutzt, geht dort legal online,
+  // und eine Warnung wäre schlicht falsch.
+  const cfwAufSys = (hekateConf().entries.cfw_sys || {}).enabled;
+  return [
+    { key: 'blockNintendoEmu', nameKey: 'dns.emu', descKey: 'dns.emu.desc', confirmOffKey: 'dns.emu.warnOff' },
+    {
+      key: 'blockNintendoSys',
+      nameKey: 'dns.sys',
+      descKey: 'dns.sys.desc',
+      confirmOffKey: cfwAufSys ? 'dns.sys.warnOff' : null,
+    },
+  ];
+}
 
 function renderDnsBlock() {
   // Diese Schalter landen nicht in der INI, daher keine Vorschau-Aktualisierung
-  renderSettingRows($('#dns-block'), DNS_OPTIONS);
+  renderSettingRows($('#dns-block'), dnsOptions());
 }
 
 function renderHekate() {

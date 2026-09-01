@@ -78,6 +78,10 @@ window.I18N = {
     'dns.emu.desc': 'Schreibt atmosphere/hosts/emummc.txt und blockt Nintendo, wenn du CFW auf der emuMMC startest. Sollte an bleiben.',
     'dns.sys': 'sysMMC blocken',
     'dns.sys.desc': 'Schreibt atmosphere/hosts/sysmmc.txt und blockt Nintendo auf der sysMMC. Standardmäßig aus, falls du dort ganz legal online gehst.',
+    'dns.emu.warnOff':
+      'Willst du das wirklich?\n\nOhne diese Sperre meldet sich deine Switch bei jedem Online-Gang bei Nintendo, und dabei verrät sie auch, dass CFW läuft. Nintendo sperrt solche Konsolen sehr wahrscheinlich, meistens dauerhaft und ohne Vorwarnung.\n\nLass die Sperre für die emuMMC am besten an.',
+    'dns.sys.warnOff':
+      'Willst du das wirklich?\n\nDu hast den Boot-Eintrag für CFW auf der sysMMC aktiviert. Ohne diese Sperre meldet sich die Switch dann ungeschützt bei Nintendo und verrät, dass CFW läuft. Eine Konsolensperre ist sehr wahrscheinlich, meistens dauerhaft.\n\nNur abschalten, wenn du auf der sysMMC ausschließlich die originale Firmware startest.',
     'hekate.preview': 'Live-Vorschau',
     'bootentry.minOne': 'Mindestens ein Boot-Eintrag muss aktiv bleiben.',
     'autoboot.showMenu': 'Boot-Menü anzeigen',
@@ -219,6 +223,10 @@ window.I18N = {
     'dns.emu.desc': 'Writes atmosphere/hosts/emummc.txt and blocks Nintendo when you boot CFW on the emuMMC. Best left on.',
     'dns.sys': 'Block on sysMMC',
     'dns.sys.desc': 'Writes atmosphere/hosts/sysmmc.txt and blocks Nintendo on the sysMMC. Off by default, in case you go online there legitimately.',
+    'dns.emu.warnOff':
+      'Are you sure?\n\nWithout this block your Switch talks to Nintendo every time it goes online, and it gives away that CFW is running. Nintendo very likely bans consoles for that, usually for good and without warning.\n\nBest leave the block on for the emuMMC.',
+    'dns.sys.warnOff':
+      'Are you sure?\n\nYou have enabled the boot entry for CFW on the sysMMC. Without this block the Switch then reaches Nintendo unprotected and gives away that CFW is running. A console ban is very likely, usually permanent.\n\nOnly turn this off if you boot nothing but the original firmware on the sysMMC.',
     'hekate.preview': 'Live preview',
     'bootentry.minOne': 'At least one boot entry has to stay enabled.',
     'autoboot.showMenu': 'Show boot menu',

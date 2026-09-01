@@ -6,6 +6,7 @@
 //   HATS_SMOKE=1     → App starten, Renderer-Initialisierung prüfen, beenden
 //   HATS_SHOT_DIR=…  → zusätzlich Screenshots aller Ansichten speichern
 //   HATS_TEST_DEPS=1 → zusätzlich Abhängigkeits-Automatik der Toggles testen
+//   HATS_TEST_DNS=1  → zusätzlich die Rückfrage beim Abschalten der 90DNS-Sperre
 
 const fs = require('fs');
 const path = require('path');
@@ -22,8 +23,27 @@ async function waitForReady(win) {
   return false;
 }
 
+// Die Versionsabfrage laeuft nach dem Start noch weiter. Fuer Screenshots
+// lohnt es sich zu warten, sonst steht auf jeder Karte "Version wird geladen".
+async function waitForReleases(win) {
+  for (let i = 0; i < 60; i++) {
+    try {
+      const fertig = await win.webContents.executeJavaScript(
+        '(() => { const s = window.__APP_STATE__; return Boolean(s && Object.keys(s.releases).length); })()'
+      );
+      if (fertig) return true;
+    } catch {
+      /* Renderer noch nicht so weit */
+    }
+    await new Promise((r) => setTimeout(r, 250));
+  }
+  return false;
+}
+
 async function takeScreenshots(win, shotDir) {
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  await waitForReleases(win);
+  await sleep(600);
   const shot = async (name) => fs.writeFileSync(path.join(shotDir, name), (await win.webContents.capturePage()).toPNG());
   const click = (sel) => win.webContents.executeJavaScript(`document.querySelector('${sel}').click(); true`);
 
@@ -182,6 +202,79 @@ async function testDependencies(win) {
   return ok;
 }
 
+// Prueft die Rueckfrage beim Abschalten der Nintendo-Sperre: Ablehnen muss den
+// Schalter zurueckdrehen, Bestaetigen muss ihn wirklich abschalten. Die sysMMC
+// warnt nur, wenn dort auch CFW startet.
+async function testDnsWarning(win) {
+  const res = await win.webContents.executeJavaScript(`(() => {
+    const S = window.__APP_STATE__;
+    const hek = () => S.settings.hekate;
+    const zeigeHekate = () => document.querySelector('.nav-item[data-view="hekate"]').click();
+    const box = (i) => document.querySelectorAll('#dns-block input[type=checkbox]')[i];
+    const out = [];
+    const echtesConfirm = window.confirm;
+    let gefragt = 0;
+    const mitConfirm = (antwort, fn) => {
+      gefragt = 0;
+      window.confirm = () => { gefragt++; return antwort; };
+      try { fn(); } finally { window.confirm = echtesConfirm; }
+      return gefragt;
+    };
+
+    zeigeHekate();
+
+    // 1. emuMMC abschalten und ablehnen -> bleibt an
+    hek().blockNintendoEmu = true;
+    document.querySelector('.nav-item[data-view="hekate"]').click();
+    const n1 = mitConfirm(false, () => box(0).click());
+    out.push({ name: 'emuMMC: Abschalten abgelehnt -> bleibt an', ok: n1 === 1 && hek().blockNintendoEmu === true && box(0).checked === true });
+
+    // 2. emuMMC abschalten und bestaetigen -> geht aus
+    const n2 = mitConfirm(true, () => box(0).click());
+    out.push({ name: 'emuMMC: Abschalten bestaetigt -> geht aus', ok: n2 === 1 && hek().blockNintendoEmu === false });
+
+    // 3. Wieder einschalten fragt NICHT nach
+    const n3 = mitConfirm(false, () => box(0).click());
+    out.push({ name: 'emuMMC: Einschalten fragt nicht nach', ok: n3 === 0 && hek().blockNintendoEmu === true });
+
+    // Boot-Eintraege ueber die Oberflaeche schalten. Nur so wird der
+    // DNS-Bereich neu aufgebaut, genau wie beim echten Klick des Nutzers.
+    const bootBox = (key) => document.querySelectorAll('#boot-entries input[type=checkbox]')[S.entryOrder.indexOf(key)];
+    const setzeBoot = (key, an) => { if (bootBox(key).checked !== an) bootBox(key).click(); };
+    const setzeSysSperre = (an) => { if (box(1).checked !== an) mitConfirm(true, () => box(1).click()); };
+
+    // 4. sysMMC ohne CFW-auf-sysMMC: keine Warnung
+    setzeBoot('cfw_sys', false);
+    setzeSysSperre(true);
+    const n4 = mitConfirm(false, () => box(1).click());
+    out.push({ name: 'sysMMC ohne CFW-Eintrag: keine Rueckfrage', ok: n4 === 0 && hek().blockNintendoSys === false });
+
+    // 5. sysMMC MIT CFW-auf-sysMMC: warnt
+    setzeBoot('cfw_sys', true);
+    setzeSysSperre(true);
+    const n5 = mitConfirm(false, () => box(1).click());
+    out.push({ name: 'sysMMC mit CFW-Eintrag: warnt und bleibt an', ok: n5 === 1 && hek().blockNintendoSys === true });
+    setzeBoot('cfw_sys', false);
+
+    // 6. Warntexte gibt es in beiden Sprachen
+    const fehlt = [];
+    for (const l of ['de', 'en']) for (const k of ['dns.emu.warnOff', 'dns.sys.warnOff']) {
+      if (!window.I18N[l] || !window.I18N[l][k]) fehlt.push(l + '/' + k);
+    }
+    out.push({ name: 'Warntexte in beiden Sprachen', ok: fehlt.length === 0, extra: fehlt.join(', ') });
+
+    return out;
+  })()`);
+
+  let ok = true;
+  console.log('— Warnung beim Abschalten der Nintendo-Sperre —');
+  for (const r of res) {
+    ok = ok && r.ok;
+    console.log(`${r.ok ? 'OK  ' : 'FAIL'}  ${r.name}${r.extra ? '  (' + r.extra + ')' : ''}`);
+  }
+  return ok;
+}
+
 function register(win, app) {
   win.webContents.on('console-message', (_e, _level, message) => {
     console.log('[renderer]', message);
@@ -191,6 +284,7 @@ function register(win, app) {
     try {
       if (ok && process.env.HATS_SHOT_DIR) await takeScreenshots(win, process.env.HATS_SHOT_DIR);
       if (ok && process.env.HATS_TEST_DEPS) ok = await testDependencies(win);
+      if (ok && process.env.HATS_TEST_DNS) ok = await testDnsWarning(win);
     } catch (err) {
       console.log('TESTFEHLER:', err.message);
       ok = false;
