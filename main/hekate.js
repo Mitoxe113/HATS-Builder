@@ -3,6 +3,8 @@
 // Erzeugt bootloader/hekate_ipl.ini aus den Einstellungen des Config-Tabs.
 // Referenz: https://github.com/CTCaer/hekate#hekate_iplini-configuration
 
+const { mt } = require('./messages');
+
 const DEFAULT_HEKATE = {
   autoboot: '',       // '' = Boot-Menü anzeigen, sonst SCHLÜSSEL des Eintrags (z. B. 'semistock')
   bootwait: 3,        // Sekunden, die das Boot-Logo angezeigt wird (0-20)
@@ -126,7 +128,7 @@ function generateIni(config) {
   const autobootIndex = c.autoboot ? enabledKeys.indexOf(c.autoboot) + 1 : 0;
 
   const lines = [
-    '# Erstellt mit HATS Builder',
+    `# ${mt('ini.createdWith')}`,
     '[config]',
     `autoboot=${autobootIndex}`,
     'autoboot_list=0',

@@ -1,31 +1,39 @@
 # HATS Builder
 
-| Komponenten | Hekate-Config |
+| Components | Hekate Config |
 |---|---|
-| [![Komponenten-Ansicht](docs/komponenten.png)](docs/komponenten.png) | [![Hekate-Config-Ansicht](docs/hekate-config.png)](docs/hekate-config.png) |
+| [![Komponenten-Ansicht](docs/components.png)](docs/components.png) | [![Hekate-Config-Ansicht](docs/hekate-config.png)](docs/hekate-config.png) |
 
 <details>
 <summary><b>🇩🇪 Deutsch</b></summary>
 
 <br>
 
-HATS Builder ist eine Windows-App, die dir ein komplettes CFW-Paket für deine gemoddete Nintendo Switch zusammenstellt. Alle Komponenten kommen direkt aus den offiziellen GitHub-Releases der jeweiligen Entwickler, immer in der aktuellsten Version. Die Oberfläche gibt es auf Deutsch und Englisch, umschalten kannst du sie in den Einstellungen.
+HATS Builder stellt dir das komplette CFW-Paket für deine gemoddete Switch zusammen. Du klickst an, was drauf soll, und die App holt jede Komponente frisch aus dem offiziellen GitHub-Release ihres Entwicklers. Kein Repack, keine veralteten Dateien, nichts aus zweiter Hand.
 
-### Was die App kann
+Die Oberfläche gibt es auf Deutsch und Englisch, umschalten kannst du sie in den Einstellungen.
 
-Es gibt drei Tabs.
+### Was dich erwartet
 
-**Komponenten.** Hier wählst du aus, was in dein Pack kommt. Es gibt ein Suchfeld, und ein Klick auf die Version zeigt dir, was sich in dem Release geändert hat. Die App fragt GitHub live ab, du bekommst also immer die neueste Version. Wenn eine Komponente eine andere braucht, aktiviert die App diese einfach mit. FPSLocker braucht zum Beispiel SaltyNX. Ein Eintrag ist gekennzeichnet, damit du weißt, was er ist: sys-patch ist ein Sigpatch, umgeht also Signaturprüfungen.
+**Komponenten.** Hier stellst du dein Pack zusammen. Über 30 Sachen stehen bereit, von Atmosphère und Hekate über Homebrew-Apps bis zu den Tesla-Overlays. Ein Suchfeld ist da, und wenn du auf eine Versionsnummer klickst, siehst du sofort, was sich im Release geändert hat.
 
-**Hekate-Config.** Hier richtest du das Boot-Menü ein. Du legst fest, welcher Eintrag automatisch startet, wie lange das Boot-Logo zu sehen ist, ob Auto-NoGC an ist und noch ein paar Dinge mehr. Dazu siehst du eine Live-Vorschau der hekate_ipl.ini, die in dein Pack kommt. In einem eigenen Bereich kannst du Nintendos Server per DNS blocken. Für emuMMC ist das standardmäßig an, für sysMMC aus, und du kannst beides umstellen. Schaltest du die Sperre ab, fragt die App noch einmal nach, denn eine ungeschützte Konsole wird sehr wahrscheinlich gesperrt.
+Um Abhängigkeiten musst du dich nicht kümmern. Schaltest du FPSLocker an, kommt SaltyNX von allein mit. Und wo es darauf ankommt, sagt dir die App, womit du es zu tun hast: sys-patch trägt ein Sigpatch-Kennzeichen, weil es Signaturprüfungen umgeht.
 
-**Erstellen und SD.** Die App lädt die neuesten Versionen in einen eigenen Ordner und kopiert ihn auf Wunsch direkt auf deine Karte. Dabei führt sie alles zusammen, deine Spielstände, der Nintendo-Ordner und die emuMMC bleiben also unangetastet. Vor dem Kopieren prüft sie, ob das Pack überhaupt draufpasst, und sagt dir, welche deiner eigenen Konfigurationsdateien überschrieben würden. Sowohl das Erstellen als auch das Kopieren lässt sich jederzeit abbrechen.
+**Hekate-Config.** Das Boot-Menü, so wie du es haben willst. Welcher Eintrag automatisch startet, wie lange das Logo stehen bleibt, ob Auto-NoGC an ist. Rechts läuft eine Live-Vorschau der `hekate_ipl.ini` mit, du siehst also beim Klicken, was am Ende auf der Karte landet.
 
-### Starten
+Weiter unten blockst du Nintendos Server per DNS. Für die emuMMC ist das an, für die sysMMC aus. Schaltest du es ab, fragt die App noch einmal nach, denn eine ungeschützte Konsole wird sehr wahrscheinlich gesperrt.
 
-Nimm `HATS Builder.exe` (die ist portabel, einfach doppelklicken) oder führe den Installer `HATS Builder Setup.exe` aus. Die App legt sich den Ordner `Switch-SD-Pack` auf dem Desktop an. Wählst du selbst einen Ort wie den Desktop oder die Dokumente, entsteht dort ebenfalls ein eigener Unterordner, damit nichts zwischen deine anderen Dateien gerät.
+**Erstellen und SD.** Ein Klick, und die App lädt alles herunter und legt dir den fertigen Ordner an. Steckt deine Karte schon im Rechner, kopiert sie ihn auf Wunsch gleich drauf.
 
-Die App hält sich selbst aktuell. Beim Start schaut sie nach, ob es etwas Neueres gibt, und blendet dann oben einen Balken ein. Ein Klick lädt die passende Datei, danach startet sich die App neu und ist auf dem neuen Stand. Auf GitHub musst du dafür nicht mehr. Die Prüfung kannst du auch jederzeit in den Einstellungen anstoßen.
+Dabei wird zusammengeführt statt plattgemacht: Spielstände, der Nintendo-Ordner und deine emuMMC bleiben, wie sie sind. Vorher schaut die App nach, ob das Pack überhaupt draufpasst, und sagt dir, welche deiner eigenen Konfigurationsdateien sie überschreiben würde. Abbrechen kannst du jederzeit, beim Laden wie beim Kopieren.
+
+### Loslegen
+
+Nimm `HATS Builder.exe`, die ist portabel, ein Doppelklick genügt. Wer es lieber installiert mag, nimmt `HATS Builder Setup.exe`.
+
+Das fertige Pack landet in `Switch-SD-Pack` auf dem Desktop. Suchst du dir selbst einen Ort aus, legt die App auch dort einen eigenen Unterordner an, damit dir nichts zwischen die anderen Dateien rutscht.
+
+Um Updates musst du dich nicht kümmern. Beim Start schaut die App nach, blendet oben einen Balken ein, wenn etwas Neues da ist, und spielt es auf Klick selbst ein. Danach startet sie neu und ist aktuell. Auf GitHub musst du dafür nicht mehr.
 
 ### Selbst bauen
 
@@ -35,13 +43,17 @@ npm start        (Entwicklungsmodus)
 npm run dist     (EXE bauen)
 ```
 
-### Hinweise
+### Gut zu wissen
 
-Deine SD-Karte sollte FAT32 sein, bei exFAT warnt dich die App. Wenn du in den Einstellungen ein kostenloses GitHub-Token hinterlegst, steigt das API-Limit von 60 auf 5.000 Abfragen pro Stunde. HATS Builder ist für eine bereits gemoddete Switch gedacht, egal ob per Modchip oder RCM, und die `payload.bin` landet von allein im SD-Root.
+Deine SD-Karte sollte FAT32 sein. Ist sie exFAT, sagt dir die App Bescheid, denn bei einem Absturz kann exFAT dir die Karte zerlegen.
 
-### Vorschläge und Fehler
+Ohne Anmeldung erlaubt GitHub 60 Abfragen pro Stunde, und das reicht im Alltag. Wird es dir zu knapp, hinterleg in den Einstellungen ein kostenloses GitHub-Token, dann sind es 5.000. Berechtigungen braucht das Token keine, und es bleibt auf deinem Rechner.
 
-Dir fehlt eine Komponente, du hast eine Idee für eine Funktion oder etwas läuft nicht rund? Mach gern ein [Issue auf GitHub](https://github.com/Mitoxe113/HATS-Builder/issues/new) auf. Vorschläge sind ausdrücklich willkommen, und bei einem Fehler hilft es sehr, wenn du dazuschreibst, was du gemacht hast und was stattdessen passiert ist.
+HATS Builder setzt voraus, dass deine Switch schon gemoddet ist, ob per Modchip oder RCM. Die `payload.bin` landet von allein im Wurzelverzeichnis der Karte.
+
+### Ideen und Fehler
+
+Fehlt dir eine Komponente, hast du eine Idee, oder läuft etwas nicht rund? Mach gern ein [Issue auf GitHub](https://github.com/Mitoxe113/HATS-Builder/issues/new) auf, Vorschläge sind ausdrücklich willkommen. Bei einem Fehler hilft es sehr, wenn du kurz dazuschreibst, was du gemacht hast und was stattdessen passiert ist.
 
 </details>
 
@@ -50,23 +62,31 @@ Dir fehlt eine Komponente, du hast eine Idee für eine Funktion oder etwas läuf
 
 <br>
 
-HATS Builder is a Windows app that builds a complete CFW pack for your modded Nintendo Switch. Every component comes straight from its developer's official GitHub releases, always in the newest version. The interface comes in German and English, and you can switch it in the settings.
+HATS Builder puts together the whole CFW pack for your modded Switch. You tick what you want, and the app pulls every component straight from its developer's official GitHub release. No repacks, no stale files, nothing second hand.
 
-### What the app does
+The interface comes in German and English, and you can switch it in the settings.
 
-There are three tabs.
+### What you get
 
-**Components.** Here you pick what goes into your pack. There's a search box, and clicking a version shows you what changed in that release. The app checks GitHub live, so you always get the latest version of each item. When something needs another component, the app simply enables that one for you. FPSLocker needs SaltyNX, for example. One entry is marked so you know what it is: sys-patch is a sigpatch, which means it bypasses signature checks.
+**Components.** This is where you put your pack together. Over 30 things are on offer, from Atmosphère and Hekate through homebrew apps to the Tesla overlays. There's a search box, and clicking a version number shows you right away what changed in that release.
 
-**Hekate Config.** This is where you set up the boot menu. You decide which entry boots automatically, how long the boot logo stays on screen, whether Auto-NoGC is on, and a few more things. You also get a live preview of the hekate_ipl.ini that ends up in your pack. There is a separate section for blocking Nintendo's servers via DNS. It is on for emuMMC and off for sysMMC by default, and you can flip both. If you switch the block off, the app asks you to confirm, because an unprotected console is very likely to get banned.
+Dependencies aren't your problem. Turn on FPSLocker and SaltyNX comes along by itself. And where it matters, the app tells you what you're dealing with: sys-patch carries a sigpatch label, because it bypasses signature checks.
 
-**Build and SD.** The app downloads the latest versions into a folder of its own and copies it straight onto your card if you want. It merges everything, so your saves, the Nintendo folder and your emuMMC stay untouched. Before copying it checks that the pack actually fits and tells you which of your own config files would be overwritten. Both the build and the copy can be cancelled at any time.
+**Hekate Config.** The boot menu, the way you want it. Which entry boots on its own, how long the logo stays up, whether Auto-NoGC is on. A live preview of the `hekate_ipl.ini` runs alongside, so you see what ends up on the card while you click.
 
-### Running it
+Further down you block Nintendo's servers via DNS. It's on for the emuMMC and off for the sysMMC. Switch it off and the app asks you to confirm, because an unprotected console is very likely to get banned.
 
-Grab `HATS Builder.exe` (it's portable, just double click it) or run the installer `HATS Builder Setup.exe`. The app creates a `Switch-SD-Pack` folder on your desktop. If you pick a place like the desktop or your documents yourself, it creates a subfolder there too, so nothing ends up among your other files.
+**Build and SD.** One click and the app downloads everything and builds you the finished folder. If your card is already in the reader, it copies the folder over for you.
 
-The app keeps itself up to date. On startup it checks whether something newer is out and shows a bar at the top. One click downloads the right file, then the app restarts itself on the new version. No trip to GitHub needed. You can also trigger the check yourself in the settings.
+It merges rather than wipes: your saves, the Nintendo folder and your emuMMC stay exactly as they are. Before it starts, the app checks the pack actually fits and tells you which of your own config files it would overwrite. You can cancel at any point, while downloading and while copying.
+
+### Getting started
+
+Grab `HATS Builder.exe`, it's portable and a double click is all it takes. If you'd rather install it, run `HATS Builder Setup.exe`.
+
+The finished pack lands in `Switch-SD-Pack` on your desktop. Pick your own spot and the app still creates a subfolder there, so nothing slips in among your other files.
+
+Updates take care of themselves. The app checks on startup, shows a bar at the top when something new is out, and installs it for you at a click. Then it restarts and you're current. No trip to GitHub needed.
 
 ### Building it yourself
 
@@ -76,12 +96,16 @@ npm start        (run in dev mode)
 npm run dist     (build the EXE)
 ```
 
-### Notes
+### Worth knowing
 
-Your SD card should be FAT32, and the app warns you if it's exFAT. If you add a free GitHub token in the settings, the API limit jumps from 60 to 5,000 requests per hour. HATS Builder is meant for a Switch that's already modded, whether by modchip or RCM, and the `payload.bin` lands in the SD root on its own.
+Your SD card should be FAT32. If it's exFAT the app says so, because exFAT can wreck a card when something crashes.
 
-### Suggestions and bugs
+Without signing in, GitHub allows 60 requests an hour, which is plenty day to day. If that gets tight, add a free GitHub token in the settings and you get 5,000. The token needs no permissions at all, and it stays on your machine.
 
-Missing a component, got an idea for a feature, or did something go wrong? Feel free to open an [issue on GitHub](https://github.com/Mitoxe113/HATS-Builder/issues/new). Suggestions are genuinely welcome, and for a bug it helps a lot if you add what you did and what happened instead.
+HATS Builder assumes your Switch is already modded, whether by modchip or RCM. The `payload.bin` lands in the root of the card on its own.
+
+### Ideas and bugs
+
+Missing a component, got an idea, or did something go wrong? Feel free to open an [issue on GitHub](https://github.com/Mitoxe113/HATS-Builder/issues/new), suggestions are genuinely welcome. For a bug it helps a lot if you add what you did and what happened instead.
 
 </details>

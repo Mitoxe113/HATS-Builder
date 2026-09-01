@@ -167,6 +167,12 @@ const M = {
     de: 'unbekannt',
     en: 'unknown',
   },
+  // Kommentar-Zeile ganz oben in der erzeugten hekate_ipl.ini. Steht auch in
+  // der Live-Vorschau, gehört also genauso übersetzt wie der Rest.
+  'ini.createdWith': {
+    de: 'Erstellt mit HATS Builder',
+    en: 'Created with HATS Builder',
+  },
 };
 
 function mt(key, ...args) {
