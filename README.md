@@ -1,8 +1,8 @@
 # HATS Builder
 
-| Components | Hekate Config |
-|---|---|
-| [![Komponenten-Ansicht](docs/components.png)](docs/components.png) | [![Hekate-Config-Ansicht](docs/hekate-config.png)](docs/hekate-config.png) |
+| Components | Hekate Config | Build &amp; SD |
+|---|---|---|
+| [![Komponenten auswaehlen](docs/components.png)](docs/components.png) | [![Boot-Menue einrichten](docs/hekate-config.png)](docs/hekate-config.png) | [![Pack erstellen und auf die Karte kopieren](docs/build-sd.png)](docs/build-sd.png) |
 
 <details>
 <summary><b>🇩🇪 Deutsch</b></summary>
