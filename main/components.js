@@ -5,8 +5,11 @@
 //
 // Feldübersicht:
 //   repo        – GitHub "owner/name"
-//   source      – 'release' (Standard, neuestes Release) oder 'branch' (Branch-Archiv)
-//   branch      – bei source:'branch' der Branch-Name
+//   source      – 'release' (Standard), 'branch' (Branch-Archiv) oder 'dir' (Ordner im Repo,
+//                 verhält sich wie eine Asset-Liste: die match-Regeln picken sich heraus,
+//                 was sie brauchen, der Rest des Ordners bleibt liegen)
+//   branch      – bei source:'branch' und source:'dir' der Branch-Name
+//   dir         – bei source:'dir' der Ordner im Repo
 //   category    – Zuordnung zu einer CATEGORIES-Gruppe
 //   required    – kann nicht abgewählt werden (Basis)
 //   defaultOn   – standardmäßig aktiviert
@@ -391,6 +394,29 @@ const COMPONENTS = [
       en: 'Toolbox for HWFLY modchips: update the chip firmware and SD loader, check its state. Launched via Hekate → Payloads.',
     },
     assets: [{ match: /^hwfly_toolbox\.bin$/, action: 'copy', target: 'bootloader/payloads/hwfly_toolbox.bin' }],
+  },
+  {
+    id: 'picoflytoolbox',
+    name: 'Picofly Toolbox',
+    repo: 'Ansem-SoD/Picofly',
+    // Das Repo hat keine Releases, die Dateien liegen im Ordner Firmwares.
+    // Über den Ordner statt über einen festen Dateinamen, damit ein
+    // Versionssprung (0.2 auf 0.3) von allein mitgenommen wird.
+    source: 'dir',
+    branch: 'main',
+    dir: 'Firmwares',
+    category: 'tools',
+    description: {
+      de: 'Werkzeugkasten für Picofly-Modchips: Zustand des Chips auslesen, Fehlercodes anzeigen, Chip-Firmware aktualisieren. Wird über Hekate → Payloads gestartet.',
+      en: 'Toolbox for Picofly modchips: read the chip state, show error codes, update the chip firmware. Launched via Hekate → Payloads.',
+    },
+    // Bewusst nur die Toolbox. Im selben Ordner liegen die Chip-Firmware und
+    // eine update.bin, die beide nichts im Payload-Menü verloren haben. Der
+    // Entwickler rät ausdrücklich davon ab, die update.bin über Hekate zu
+    // starten, das zerschießt die Installation.
+    assets: [
+      { match: /^picofly_toolbox.*\.bin$/i, action: 'copy', target: 'bootloader/payloads/picofly_toolbox.bin' },
+    ],
   },
   {
     id: 'hatstools',

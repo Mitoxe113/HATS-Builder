@@ -220,12 +220,62 @@ function fetchLatestBranch(repo, branch, { force = false } = {}) {
   });
 }
 
+// Manche Projekte veröffentlichen keine Releases, sondern legen ihre Dateien
+// einfach in einen Ordner im Repo. Dieser Ordner verhält sich hier wie eine
+// Asset-Liste: Ein Aufruf liefert alles, was drin liegt, und die match-Regeln
+// der Komponente picken sich heraus, was sie brauchen. Der Rest bleibt liegen.
+function fetchLatestDir(repo, branch, dir, { force = false } = {}) {
+  return cached(`${repo}#${branch}:${dir}`, force, async (etag) => {
+    const res = await apiFetch(
+      `https://api.github.com/repos/${repo}/git/trees/${branch}:${dir}`,
+      etag ? { 'If-None-Match': etag } : {}
+    );
+    if (res.status === 304) return null;
+    checkStatus(res);
+    const baum = await res.json();
+    // Die Prüfsumme des Ordners ändert sich, sobald sich irgendeine Datei
+    // darin ändert. Damit taugt sie als Versionsangabe.
+    const sha = (baum.sha || '').slice(0, 7);
+    return {
+      data: {
+        tag: sha || branch,
+        name: `${dir} @ ${sha}`,
+        // Ein Ordner hat kein Veröffentlichungsdatum. Lieber keine Angabe
+        // als eine erfundene.
+        publishedAt: null,
+        htmlUrl: `https://github.com/${repo}/tree/${branch}/${dir}`,
+        body: '',
+        assets: (baum.tree || [])
+          .filter((e) => e.type === 'blob')
+          .map((e) => ({
+            name: e.path,
+            size: e.size || 0,
+            url: `https://raw.githubusercontent.com/${repo}/${branch}/${dir}/${e.path}`,
+          })),
+      },
+      etag: res.headers.get('etag'),
+    };
+  });
+}
+
 // Einheitlicher Einstieg: wählt anhand von component.source die Quelle.
 function fetchLatest(component, opts = {}) {
+  if (component.source === 'dir') {
+    return fetchLatestDir(component.repo, component.branch || 'main', component.dir, opts);
+  }
   if (component.source === 'branch') {
     return fetchLatestBranch(component.repo, component.branch || 'master', opts);
   }
   return fetchLatestRelease(component.repo, opts);
 }
 
-module.exports = { init, setToken, wasTokenRejected, flush, fetchLatestRelease, fetchLatestBranch, fetchLatest };
+module.exports = {
+  init,
+  setToken,
+  wasTokenRejected,
+  flush,
+  fetchLatestRelease,
+  fetchLatestBranch,
+  fetchLatestDir,
+  fetchLatest,
+};
