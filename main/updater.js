@@ -14,25 +14,10 @@ const { mt } = require('./messages');
 // Repo, aus dem die App ihre eigenen Updates bezieht.
 const REPO = 'Mitoxe113/HATS-Builder';
 
-// "v1.2.3" oder "1.2.3" wird zu [1, 2, 3]
-function parseVersion(value) {
-  return String(value || '')
-    .replace(/^v/i, '')
-    .split('.')
-    .map((part) => Number.parseInt(part, 10) || 0);
-}
-
-// Zahlenweiser Vergleich, damit 1.0.10 korrekt neuer ist als 1.0.9
-function isNewer(candidate, current) {
-  const a = parseVersion(candidate);
-  const b = parseVersion(current);
-  for (let i = 0; i < Math.max(a.length, b.length); i++) {
-    const x = a[i] || 0;
-    const y = b[i] || 0;
-    if (x !== y) return x > y;
-  }
-  return false;
-}
+// Der Versionsvergleich steckt in version.js, weil ihn auch die
+// Firmware-Prüfung braucht. Hier weiterhin mit exportiert, damit die
+// bestehenden Aufrufer nichts merken.
+const { parseVersion, isNewer } = require('./version');
 
 // Passende Datei zur laufenden Installation: portable oder Installer.
 function pickAsset(assets, portable) {

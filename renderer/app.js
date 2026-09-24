@@ -10,6 +10,7 @@ const state = {
   entryHints: {},
   settings: null,
   releases: {},
+  hos: null,
   building: false,
   copying: false,
   drives: [],
@@ -86,6 +87,7 @@ function setLanguage(lang) {
   // Alle dynamisch erzeugten Bereiche neu aufbauen
   renderComponents();
   renderReleaseStatus();
+  renderHos();
   renderHekate();
   renderBuildSummary();
   renderDrives();
@@ -321,6 +323,42 @@ function renderReleaseStatus() {
       .sort((a, b) => b.publishedAt.localeCompare(a.publishedAt))[0];
     status.textContent = newest ? t('status.allCurrent', fmtDate(newest.publishedAt)) : t('status.allCurrentNoDate');
   }
+}
+
+// ── Firmware-Abgleich ───────────────────────────────────────────────────────
+// Zeigt, bis zu welcher Switch-Firmware Atmosphère reicht und was Nintendo
+// zuletzt veröffentlicht hat. Hinkt Atmosphère hinterher, wird daraus eine
+// Warnung, denn ein Firmware-Update verbrennt Fuses und lässt sich nicht
+// zurücknehmen.
+function renderHos() {
+  const panel = $('#hos-panel');
+  const info = state.hos;
+  // Ohne wenigstens eine der beiden Zahlen sagt der Kasten nichts Nützliches
+  if (!info || (!info.supported && !info.latest)) {
+    panel.hidden = true;
+    return;
+  }
+  panel.hidden = false;
+  panel.classList.toggle('warn', Boolean(info.behind));
+
+  $('#hos-supported-label').textContent = info.atmosphere
+    ? t('hos.supportedLabel', info.atmosphere)
+    : t('hos.supportedLabelPlain');
+  $('#hos-supported').textContent = info.supported || t('hos.unknown');
+  $('#hos-latest').textContent = info.latest || t('hos.unknown');
+
+  if (info.behind) $('#hos-hint').textContent = t('hos.behind', info.latest, info.supported);
+  else if (info.supported && info.latest) $('#hos-hint').textContent = t('hos.ok');
+  else $('#hos-hint').textContent = t('hos.partial');
+}
+
+async function checkHos(force) {
+  try {
+    state.hos = await api.checkHos(force);
+  } catch {
+    state.hos = null;
+  }
+  renderHos();
 }
 
 async function checkReleases(force) {
@@ -919,7 +957,7 @@ async function main() {
 
   api.onProgress(handleProgress);
 
-  $('#btn-check-updates').addEventListener('click', () => checkReleases(true));
+  $('#btn-check-updates').addEventListener('click', () => { checkReleases(true); checkHos(true); });
 
   const tokenInput = $('#github-token');
   tokenInput.value = state.settings.githubToken || '';
@@ -995,6 +1033,7 @@ async function main() {
 
   // Beim Start automatisch die aktuellen Versionen laden (aus Cache oder GitHub)
   checkReleases(false);
+  checkHos(false);
   // ... und still nachsehen, ob es eine neuere HATS-Builder-Version gibt
   checkForUpdate();
 

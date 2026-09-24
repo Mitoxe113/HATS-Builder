@@ -8,6 +8,7 @@ const github = require('./github');
 const builder = require('./builder');
 const sd = require('./sd');
 const updater = require('./updater');
+const firmware = require('./firmware');
 const messages = require('./messages');
 const { mt } = messages;
 const { DEFAULT_HEKATE, ENTRY_ORDER, ENTRY_TEMPLATES, generateIni, normalize } = require('./hekate');
@@ -229,6 +230,16 @@ function registerIpc() {
       })
     );
     return results;
+  });
+
+  // Bis zu welcher Switch-Firmware reicht Atmosphère, und was ist aktuell?
+  // Scheitert die Abfrage, bleibt der Kasten in der Oberfläche einfach leer.
+  ipcMain.handle('hos:check', async (_e, opts) => {
+    try {
+      return await firmware.check({ force: Boolean(opts && opts.force) });
+    } catch {
+      return null;
+    }
   });
 
   ipcMain.handle('hekate:preview', (_e, config) => generateIni(config));

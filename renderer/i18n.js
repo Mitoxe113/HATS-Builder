@@ -67,6 +67,16 @@ window.I18N = {
     'status.allCurrentNoDate': 'Alles auf dem neuesten Stand.',
     'status.checkFailed': 'Der Versions-Check hat nicht geklappt. {0}',
 
+    'hos.title': 'Switch-Firmware',
+    'hos.supportedLabel': 'Atmosphère {0} unterstützt bis',
+    'hos.supportedLabelPlain': 'Atmosphère unterstützt bis',
+    'hos.latestLabel': 'Neueste Firmware von Nintendo',
+    'hos.unknown': 'unbekannt',
+    'hos.behind':
+      'Aktualisiere deine Switch jetzt bitte nicht auf {0}. Atmosphère reicht bisher nur bis {1}, danach würde die CFW nicht mehr starten. Zurück kommst du nicht, ein Firmware-Update verbrennt Fuses. Warte einfach, bis eine passende Atmosphère-Version erscheint, meist dauert das ein paar Tage bis Wochen.',
+    'hos.ok': 'Atmosphère ist auf dem Stand der aktuellen Firmware. Von dieser Seite spricht nichts gegen ein Update deiner Switch.',
+    'hos.partial': 'Einer der beiden Stände ließ sich gerade nicht abfragen. Prüf das lieber selbst nach, bevor du deine Switch aktualisierst.',
+
     'hekate.title': 'Hekate Boot-Menü',
     'hekate.subtitleHtml': 'Diese Einstellungen landen als <code>bootloader/hekate_ipl.ini</code> in deinem Pack.',
     'hekate.bootEntries': 'Boot-Einträge',
@@ -211,6 +221,16 @@ window.I18N = {
     'status.allCurrent': 'Everything is up to date. The latest release is from {0}.',
     'status.allCurrentNoDate': 'Everything is up to date.',
     'status.checkFailed': "The version check didn't work. {0}",
+
+    'hos.title': 'Switch firmware',
+    'hos.supportedLabel': 'Atmosphère {0} supports up to',
+    'hos.supportedLabelPlain': 'Atmosphère supports up to',
+    'hos.latestLabel': 'Newest firmware from Nintendo',
+    'hos.unknown': 'unknown',
+    'hos.behind':
+      'Please do not update your Switch to {0} yet. Atmosphère only goes up to {1} so far, and after the update your CFW would no longer boot. There is no way back either, a firmware update burns fuses. Just wait for a matching Atmosphère release, which usually takes a few days to a few weeks.',
+    'hos.ok': 'Atmosphère has caught up with the current firmware. From that side there is nothing speaking against updating your Switch.',
+    'hos.partial': 'One of the two versions could not be checked right now. Better verify it yourself before you update your Switch.',
 
     'hekate.title': 'Hekate Boot Menu',
     'hekate.subtitleHtml': 'These settings are written as <code>bootloader/hekate_ipl.ini</code> in your pack.',

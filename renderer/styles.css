@@ -319,6 +319,32 @@ h1 { font-size: 23px; font-weight: 700; letter-spacing: -0.3px; }
 .release-status.info { background: var(--card); color: var(--text-dim); border: 1px solid var(--border); }
 .release-status.warn { background: var(--yellow-soft); color: var(--yellow); }
 
+/* ── Firmware-Abgleich Atmosphère gegen HOS ────────────────────────────── */
+.hos-panel {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--green);
+  border-radius: var(--radius-sm);
+  padding: 13px 16px;
+  margin-bottom: 18px;
+}
+/* Hinkt Atmosphère hinterher, wird der Kasten zum Warnhinweis */
+.hos-panel.warn { border-left-color: var(--yellow); background: var(--yellow-soft); }
+.hos-head {
+  display: flex; align-items: center; gap: 7px;
+  font-size: 12px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.6px;
+  color: var(--text-faint);
+  margin-bottom: 11px;
+}
+.hos-panel.warn .hos-head { color: var(--yellow); }
+.hos-versions { display: flex; flex-wrap: wrap; gap: 28px; }
+.hos-label { color: var(--text-dim); font-size: 12px; margin-bottom: 3px; }
+.hos-value { font-family: var(--mono); font-size: 19px; font-weight: 700; color: var(--text); }
+.hos-panel.warn .hos-value { color: var(--yellow); }
+.hos-hint { color: var(--text-dim); font-size: 12.5px; line-height: 1.55; margin-top: 11px; }
+.hos-panel.warn .hos-hint { color: var(--text); }
+
 .comp-section { margin-bottom: 26px; }
 .comp-section-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 12px; }
 .comp-section-head h2 { font-size: 15px; font-weight: 700; }

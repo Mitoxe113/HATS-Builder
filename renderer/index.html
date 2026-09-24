@@ -78,6 +78,26 @@
           </div>
         </header>
         <div class="release-status" id="release-status"></div>
+
+        <!-- Firmware-Abgleich: bis wohin reicht Atmosphère, was ist aktuell -->
+        <div class="hos-panel" id="hos-panel" hidden>
+          <div class="hos-head">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            <span data-i18n="hos.title">Switch-Firmware</span>
+          </div>
+          <div class="hos-versions">
+            <div class="hos-box">
+              <div class="hos-label" id="hos-supported-label"></div>
+              <div class="hos-value" id="hos-supported"></div>
+            </div>
+            <div class="hos-box">
+              <div class="hos-label" data-i18n="hos.latestLabel">Neueste Firmware von Nintendo</div>
+              <div class="hos-value" id="hos-latest"></div>
+            </div>
+          </div>
+          <div class="hos-hint" id="hos-hint"></div>
+        </div>
+
         <div id="component-sections"></div>
       </section>
 

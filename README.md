@@ -19,6 +19,8 @@ Die Oberfläche gibt es auf Deutsch und Englisch, umschalten kannst du sie in de
 
 Um Abhängigkeiten musst du dich nicht kümmern. Schaltest du FPSLocker an, kommt SaltyNX von allein mit. Und wo es darauf ankommt, sagt dir die App, womit du es zu tun hast: sys-patch trägt ein Sigpatch-Kennzeichen, weil es Signaturprüfungen umgeht.
 
+Ganz oben siehst du außerdem, bis zu welcher Switch-Firmware Atmosphère gerade reicht und welche Firmware Nintendo zuletzt herausgebracht hat. Hinkt Atmosphère hinterher, wird der Kasten zur Warnung. Das ist der Moment, in dem du deine Konsole besser noch nicht aktualisierst, denn ein Firmware-Update verbrennt Fuses und lässt sich nicht zurücknehmen.
+
 **Hekate-Config.** Das Boot-Menü, so wie du es haben willst. Welcher Eintrag automatisch startet, wie lange das Logo stehen bleibt, ob Auto-NoGC an ist. Rechts läuft eine Live-Vorschau der `hekate_ipl.ini` mit, du siehst also beim Klicken, was am Ende auf der Karte landet.
 
 Weiter unten blockst du Nintendos Server per DNS. Für die emuMMC ist das an, für die sysMMC aus. Schaltest du es ab, fragt die App noch einmal nach, denn eine ungeschützte Konsole wird sehr wahrscheinlich gesperrt.
@@ -71,6 +73,8 @@ The interface comes in German and English, and you can switch it in the settings
 **Components.** This is where you put your pack together. Over 30 things are on offer, from Atmosphère and Hekate through homebrew apps to the Tesla overlays. There's a search box, and clicking a version number shows you right away what changed in that release.
 
 Dependencies aren't your problem. Turn on FPSLocker and SaltyNX comes along by itself. And where it matters, the app tells you what you're dealing with: sys-patch carries a sigpatch label, because it bypasses signature checks.
+
+Right at the top you also see how far Atmosphère currently goes in terms of Switch firmware, and which firmware Nintendo released last. When Atmosphère is behind, the box turns into a warning. That's the moment to hold off on updating your console, because a firmware update burns fuses and cannot be undone.
 
 **Hekate Config.** The boot menu, the way you want it. Which entry boots on its own, how long the logo stays up, whether Auto-NoGC is on. A live preview of the `hekate_ipl.ini` runs alongside, so you see what ends up on the card while you click.
 

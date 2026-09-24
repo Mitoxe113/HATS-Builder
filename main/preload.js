@@ -6,6 +6,7 @@ contextBridge.exposeInMainWorld('api', {
   init: () => ipcRenderer.invoke('app:init'),
   saveSettings: (partial) => ipcRenderer.invoke('settings:save', partial),
   checkReleases: (force = false) => ipcRenderer.invoke('releases:check', { force }),
+  checkHos: (force = false) => ipcRenderer.invoke('hos:check', { force }),
   previewHekateIni: (config) => ipcRenderer.invoke('hekate:preview', config),
   chooseOutputDir: () => ipcRenderer.invoke('pack:chooseOutput'),
   buildPack: (args) => ipcRenderer.invoke('pack:build', args),
