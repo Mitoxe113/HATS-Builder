@@ -47,12 +47,18 @@ async function check({ force = false } = {}) {
     latest: null,     // neueste von Nintendo veröffentlichte HOS-Version
     latestDate: null,
     behind: false,    // true, wenn Atmosphère der Firmware hinterherhinkt
+    // true, wenn mindestens eine Zahl aus dem Zwischenspeicher kommt, weil
+    // GitHub gerade nicht erreichbar war. Das muss in der Oberfläche stehen:
+    // Ein "du kannst gefahrlos aktualisieren" auf Basis alter Daten wäre der
+    // gefährlichste Satz, den die App sagen kann.
+    stale: false,
   };
 
   try {
     const atmo = await github.fetchLatestRelease(ATMOSPHERE_REPO, { force });
     ergebnis.atmosphere = atmo.tag || null;
     ergebnis.supported = parseSupportedHos(atmo.body);
+    if (atmo.stale) ergebnis.stale = true;
   } catch {
     /* ohne Atmosphère-Release bleibt der Abschnitt leer */
   }
@@ -62,6 +68,7 @@ async function check({ force = false } = {}) {
     // Tags sind dort schlicht "23.0.0", ein führendes v kommt aber vor
     ergebnis.latest = (fw.tag || '').replace(/^v/i, '') || null;
     ergebnis.latestDate = fw.publishedAt || null;
+    if (fw.stale) ergebnis.stale = true;
   } catch {
     /* Firmware-Stand unbekannt, dann eben nur die unterstützte Version */
   }

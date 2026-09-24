@@ -170,10 +170,15 @@ function preparePackDir(outputDir) {
     const entries = fs.readdirSync(outputDir);
     if (entries.length > 0) {
       const info = readPackInfo(outputDir);
-      if (!info) {
+      // Ein beschädigter Marker (abgebrochener Schreibvorgang, von Hand
+      // verändert) darf den eigenen Pack-Ordner nicht unbrauchbar machen.
+      // Liegt die Datei da, ist der Ordner unserer, auch wenn sie sich nicht
+      // mehr lesen lässt. Dann wird eben nichts gezielt gelöscht, sondern nur
+      // überschrieben, statt den Nutzer auszusperren.
+      if (!info && !entries.includes(MARKER)) {
         throw new Error(mt('err.folderNotEmpty', outputDir));
       }
-      if (Array.isArray(info.files)) {
+      if (info && Array.isArray(info.files)) {
         // Nur die von uns zuletzt geschriebenen Dateien entfernen – vom Nutzer
         // hinzugefügte Dateien im selben Ordner bleiben unangetastet.
         for (const rel of info.files) {
@@ -389,7 +394,10 @@ async function buildPack({ outputDir, selectedIds, hekateConfig, signal }, emit)
 
 function readPackInfo(dir) {
   try {
-    return JSON.parse(fs.readFileSync(path.join(dir, MARKER), 'utf8'));
+    const info = JSON.parse(fs.readFileSync(path.join(dir, MARKER), 'utf8'));
+    // Gültiges JSON ist noch kein gültiger Marker. Eine Zahl, ein Text oder
+    // eine Liste würden weiter unten stillschweigend als Objekt behandelt.
+    return info && typeof info === 'object' && !Array.isArray(info) ? info : null;
   } catch {
     return null;
   }

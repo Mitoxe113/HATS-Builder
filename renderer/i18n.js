@@ -76,6 +76,7 @@ window.I18N = {
       'Aktualisiere deine Switch jetzt bitte nicht auf {0}. Atmosphère reicht bisher nur bis {1}, danach würde die CFW nicht mehr starten. Zurück kommst du nicht, ein Firmware-Update verbrennt Fuses. Warte einfach, bis eine passende Atmosphère-Version erscheint, meist dauert das ein paar Tage bis Wochen.',
     'hos.ok': 'Atmosphère ist auf dem Stand der aktuellen Firmware. Von dieser Seite spricht nichts gegen ein Update deiner Switch.',
     'hos.partial': 'Einer der beiden Stände ließ sich gerade nicht abfragen. Prüf das lieber selbst nach, bevor du deine Switch aktualisierst.',
+    'hos.stale': 'Achtung, diese Zahlen kommen aus dem Zwischenspeicher, GitHub war gerade nicht erreichbar. Sie können veraltet sein, prüf das vor einem Update deiner Switch lieber selbst nach.',
 
     'hekate.title': 'Hekate Boot-Menü',
     'hekate.subtitleHtml': 'Diese Einstellungen landen als <code>bootloader/hekate_ipl.ini</code> in deinem Pack.',
@@ -231,6 +232,7 @@ window.I18N = {
       'Please do not update your Switch to {0} yet. Atmosphère only goes up to {1} so far, and after the update your CFW would no longer boot. There is no way back either, a firmware update burns fuses. Just wait for a matching Atmosphère release, which usually takes a few days to a few weeks.',
     'hos.ok': 'Atmosphère has caught up with the current firmware. From that side there is nothing speaking against updating your Switch.',
     'hos.partial': 'One of the two versions could not be checked right now. Better verify it yourself before you update your Switch.',
+    'hos.stale': 'Careful, these numbers come from the cache because GitHub could not be reached. They may be out of date, so check for yourself before you update your Switch.',
 
     'hekate.title': 'Hekate Boot Menu',
     'hekate.subtitleHtml': 'These settings are written as <code>bootloader/hekate_ipl.ini</code> in your pack.',

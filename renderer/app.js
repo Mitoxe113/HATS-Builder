@@ -347,9 +347,15 @@ function renderHos() {
   $('#hos-supported').textContent = info.supported || t('hos.unknown');
   $('#hos-latest').textContent = info.latest || t('hos.unknown');
 
-  if (info.behind) $('#hos-hint').textContent = t('hos.behind', info.latest, info.supported);
-  else if (info.supported && info.latest) $('#hos-hint').textContent = t('hos.ok');
-  else $('#hos-hint').textContent = t('hos.partial');
+  let hinweis;
+  if (info.behind) hinweis = t('hos.behind', info.latest, info.supported);
+  else if (info.supported && info.latest) hinweis = t('hos.ok');
+  else hinweis = t('hos.partial');
+  // Kommen die Zahlen aus dem Zwischenspeicher, darf das nicht verschwiegen
+  // werden. Ein "du kannst aktualisieren" auf veralteter Grundlage kostet im
+  // schlimmsten Fall die CFW.
+  if (info.stale) hinweis += ` ${t('hos.stale')}`;
+  $('#hos-hint').textContent = hinweis;
 }
 
 async function checkHos(force) {

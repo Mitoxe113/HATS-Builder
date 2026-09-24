@@ -20,10 +20,27 @@ let cacheFile = null;
 let cache = {};
 let token = '';
 
+// Ein brauchbarer Cache-Eintrag hat einen Zeitstempel und ein Datenobjekt mit
+// Asset-Liste. Alles andere führt später zu Abstürzen an Stellen, die mit dem
+// Cache nichts zu tun haben (etwa release.assets.find beim Bauen).
+function eintragBrauchbar(e) {
+  return Boolean(
+    e && typeof e === 'object' && Number.isFinite(e.fetchedAt) && e.data && Array.isArray(e.data.assets)
+  );
+}
+
 function init(userDataDir) {
   cacheFile = path.join(userDataDir, 'release-cache.json');
+  cache = {};
   try {
-    cache = JSON.parse(fs.readFileSync(cacheFile, 'utf8'));
+    const gelesen = JSON.parse(fs.readFileSync(cacheFile, 'utf8'));
+    if (gelesen && typeof gelesen === 'object') {
+      // Kaputte Einträge einzeln aussortieren statt den ganzen Cache zu
+      // verwerfen. Der Rest bleibt nutzbar und spart Anfragen.
+      for (const [key, eintrag] of Object.entries(gelesen)) {
+        if (eintragBrauchbar(eintrag)) cache[key] = eintrag;
+      }
+    }
   } catch {
     cache = {};
   }
@@ -148,6 +165,12 @@ function slim(release) {
   };
 }
 
+// Laufende Abfragen je Schlüssel. Beim Start fragen die Komponentenliste und
+// der Firmware-Abgleich beide das Atmosphère-Release ab. Ohne diese Tabelle
+// wären das zwei Anfragen für dieselbe Auskunft, und bei 60 Anfragen pro
+// Stunde zählt jede einzelne.
+const laufend = new Map();
+
 // Generischer, gecachter Fetch.
 // fetcher(etag) liefert { data, etag } – oder null bei 304 (unverändert).
 async function cached(key, force, fetcher) {
@@ -155,29 +178,46 @@ async function cached(key, force, fetcher) {
   if (!force && entry && Date.now() - entry.fetchedAt < TTL_MS) {
     return { ...entry.data, stale: false, fromCache: true };
   }
-  try {
-    const result = await fetcher(entry ? entry.etag : undefined);
-    if (result === null && entry) {
-      // 304: Release unverändert – TTL auffrischen, Anfrage war "gratis"
-      cache[key] = { ...entry, fetchedAt: Date.now() };
+  // Läuft für denselben Schlüssel schon eine Abfrage, hängen wir uns dran.
+  // Die Kopie verhindert, dass zwei Aufrufer dasselbe Objekt teilen.
+  const schonUnterwegs = laufend.get(key);
+  if (schonUnterwegs) return { ...(await schonUnterwegs) };
+
+  const abfrage = (async () => {
+    try {
+      const result = await fetcher(entry ? entry.etag : undefined);
+      if (result === null) {
+        // 304: Release unverändert – TTL auffrischen, Anfrage war "gratis".
+        // Ohne Eintrag dürfte das nicht vorkommen (wir hätten kein ETag
+        // mitgeschickt), aber verlassen wollen wir uns darauf nicht.
+        if (!entry) throw new Error(mt('err.httpStatus', 304));
+        cache[key] = { ...entry, fetchedAt: Date.now() };
+        persist();
+        return { ...entry.data, stale: false, fromCache: true };
+      }
+      cache[key] = { fetchedAt: Date.now(), data: result.data, etag: result.etag || undefined };
       persist();
-      return { ...entry.data, stale: false, fromCache: true };
+      return { ...result.data, stale: false, fromCache: false };
+    } catch (err) {
+      if (entry) {
+        // Offline oder Rate-Limit: alter Stand ist besser als gar keiner
+        return {
+          ...entry.data,
+          stale: true,
+          fromCache: true,
+          staleReason: err.message,
+          staleRateLimited: !!err.rateLimited,
+        };
+      }
+      throw err;
     }
-    cache[key] = { fetchedAt: Date.now(), data: result.data, etag: result.etag || undefined };
-    persist();
-    return { ...result.data, stale: false, fromCache: false };
-  } catch (err) {
-    if (entry) {
-      // Offline oder Rate-Limit: alter Stand ist besser als gar keiner
-      return {
-        ...entry.data,
-        stale: true,
-        fromCache: true,
-        staleReason: err.message,
-        staleRateLimited: !!err.rateLimited,
-      };
-    }
-    throw err;
+  })();
+
+  laufend.set(key, abfrage);
+  try {
+    return await abfrage;
+  } finally {
+    laufend.delete(key);
   }
 }
 
@@ -225,9 +265,13 @@ function fetchLatestBranch(repo, branch, { force = false } = {}) {
 // Asset-Liste: Ein Aufruf liefert alles, was drin liegt, und die match-Regeln
 // der Komponente picken sich heraus, was sie brauchen. Der Rest bleibt liegen.
 function fetchLatestDir(repo, branch, dir, { force = false } = {}) {
+  // Pfadteile einzeln kodieren, Schrägstriche bleiben Trenner. Ein Ordner oder
+  // eine Datei mit Leerzeichen im Namen ergäbe sonst eine kaputte Adresse und
+  // damit einen stillen 404 beim Herunterladen.
+  const enc = (p) => String(p).split('/').map(encodeURIComponent).join('/');
   return cached(`${repo}#${branch}:${dir}`, force, async (etag) => {
     const res = await apiFetch(
-      `https://api.github.com/repos/${repo}/git/trees/${branch}:${dir}`,
+      `https://api.github.com/repos/${repo}/git/trees/${encodeURIComponent(branch)}:${enc(dir)}`,
       etag ? { 'If-None-Match': etag } : {}
     );
     if (res.status === 304) return null;
@@ -250,7 +294,7 @@ function fetchLatestDir(repo, branch, dir, { force = false } = {}) {
           .map((e) => ({
             name: e.path,
             size: e.size || 0,
-            url: `https://raw.githubusercontent.com/${repo}/${branch}/${dir}/${e.path}`,
+            url: `https://raw.githubusercontent.com/${repo}/${encodeURIComponent(branch)}/${enc(dir)}/${enc(e.path)}`,
           })),
       },
       etag: res.headers.get('etag'),
