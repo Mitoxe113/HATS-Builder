@@ -90,6 +90,20 @@ async function takeScreenshots(win, shotDir) {
   await shot('view-components-search.png');
   await setSearch('');
   await sleep(300);
+
+  // Eine Komponente mit Abhaengigkeiten anklicken: zeigt die gebuendelte
+  // Meldung unten rechts und das Aufleuchten der mitgezogenen Karten.
+  await win.webContents.executeJavaScript(
+    "(() => { const b = document.querySelector('.comp-card[data-id=\"fpslocker\"] input[type=checkbox]');" +
+      'if (b && !b.checked) b.click(); return true; })()'
+  );
+  await sleep(450);
+  await shot('deps-toast.png');
+  await win.webContents.executeJavaScript(
+    "(() => { const b = document.querySelector('.comp-card[data-id=\"fpslocker\"] input[type=checkbox]');" +
+      'if (b && b.checked) b.click(); return true; })()'
+  );
+  await sleep(300);
   const hasNotes = await win.webContents.executeJavaScript(
     "(() => { const b = document.querySelector('.badge.version.clickable'); if (b) b.click(); return Boolean(b); })()"
   );

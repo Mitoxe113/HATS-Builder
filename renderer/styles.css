@@ -358,7 +358,8 @@ h1 { font-size: 23px; font-weight: 700; letter-spacing: -0.3px; }
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 16px 18px;
-  transition: border-color 0.15s, transform 0.15s, box-shadow 0.15s;
+  /* opacity gehört mit dazu, sonst springt die Karte beim An- und Abwählen */
+  transition: border-color 0.15s, transform 0.15s, box-shadow 0.15s, opacity 0.18s;
 }
 .comp-card:hover { border-color: var(--border-strong); transform: translateY(-1px); box-shadow: 0 6px 18px rgba(0,0,0,0.25); }
 .comp-card.enabled { border-color: rgba(230, 0, 57, 0.35); }
@@ -373,7 +374,25 @@ h1 { font-size: 23px; font-weight: 700; letter-spacing: -0.3px; }
 }
 .comp-repo:hover { color: var(--blue); }
 .comp-desc { color: var(--text-dim); font-size: 12.5px; line-height: 1.5; flex: 1; }
+/* Zeigt vorab, was beim Anklicken mit aktiviert wird */
+.comp-needs {
+  color: var(--text-faint); font-size: 11.5px;
+  display: flex; align-items: center; gap: 5px;
+}
+.comp-needs::before {
+  content: ""; width: 5px; height: 5px; border-radius: 50%;
+  background: var(--text-faint); flex-shrink: 0;
+}
+.comp-card.enabled .comp-needs::before { background: var(--green); }
 .comp-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+
+/* Kurzes Aufleuchten, wenn die App eine Karte von sich aus mit aktiviert hat */
+.comp-card.flash { animation: cardFlash 1.2s cubic-bezier(0.2, 0.8, 0.3, 1); }
+@keyframes cardFlash {
+  0%   { border-color: var(--green); box-shadow: 0 0 0 3px var(--green-soft); transform: translateY(-2px); }
+  55%  { border-color: var(--green); box-shadow: 0 0 0 3px var(--green-soft); transform: none; }
+  100% { border-color: rgba(230, 0, 57, 0.35); box-shadow: none; }
+}
 
 .badge {
   display: inline-flex; align-items: center; gap: 5px;
@@ -628,17 +647,29 @@ input, textarea { user-select: text; }
   max-width: 420px;
 }
 .toast {
-  padding: 13px 17px;
+  padding: 12px 16px;
   border-radius: var(--radius-sm);
   background: var(--card);
   border: 1px solid var(--border-strong);
+  border-left-width: 3px;
   box-shadow: 0 10px 30px rgba(0,0,0,0.45);
   font-size: 13px; line-height: 1.5;
-  animation: toastIn 0.25s ease;
+  animation: toastIn 0.22s cubic-bezier(0.2, 0.8, 0.3, 1);
 }
-@keyframes toastIn { from { opacity: 0; transform: translateX(24px); } to { opacity: 1; } }
-.toast.success { border-color: rgba(61, 220, 132, 0.45); color: var(--green); }
-.toast.error { border-color: rgba(230, 0, 57, 0.55); color: #ff8fa3; }
+@keyframes toastIn {
+  from { opacity: 0; transform: translateX(26px) scale(0.97); }
+  to   { opacity: 1; transform: none; }
+}
+.toast-out { animation: toastOut 0.2s ease forwards; }
+@keyframes toastOut { to { opacity: 0; transform: translateX(26px) scale(0.97); } }
+.toast-title { font-weight: 700; }
+/* Der Titel nennt die Komponente, darunter steht knapp, was noch dazukam */
+.toast-body { color: var(--text-dim); font-size: 12.5px; }
+.toast-title + .toast-body { margin-top: 3px; }
+.toast.success { border-left-color: var(--green); }
+.toast.success .toast-title { color: var(--green); }
+.toast.error { border-color: rgba(230, 0, 57, 0.55); border-left-color: var(--accent); }
+.toast.error .toast-title, .toast.error .toast-body { color: #ff8fa3; }
 
 /* ── Scrollbars ────────────────────────────────────────────────────────── */
 ::-webkit-scrollbar { width: 10px; height: 10px; }

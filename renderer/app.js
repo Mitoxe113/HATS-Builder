@@ -103,10 +103,36 @@ function fehlertext(err) {
   return ohneKanal.replace(/^[A-Za-z]*Error:\s*/, '').trim() || roh;
 }
 
-function toast(message, kind = 'info', ms = 5000) {
-  const node = el('div', `toast ${kind}`, message);
-  $('#toasts').appendChild(node);
-  setTimeout(() => node.remove(), ms);
+// Höchstens so viele Meldungen gleichzeitig. Wer schnell mehrere Komponenten
+// anklickt, soll keinen Turm aus Hinweisen bekommen.
+const MAX_TOASTS = 3;
+
+function toast(message, kind = 'info', ms = 5000, titel = null) {
+  const host = $('#toasts');
+  while (host.children.length >= MAX_TOASTS) host.firstChild.remove();
+
+  const node = el('div', `toast ${kind}`);
+  if (titel) node.appendChild(el('div', 'toast-title', titel));
+  if (message) node.appendChild(el('div', 'toast-body', message));
+  host.appendChild(node);
+
+  setTimeout(() => {
+    node.classList.add('toast-out');
+    // Erst nach der Ausblend-Animation aus dem Dokument nehmen
+    setTimeout(() => node.remove(), 220);
+  }, ms);
+}
+
+// Hebt Karten kurz hervor, damit eine automatische Änderung nicht unbemerkt
+// bleibt. Muss nach renderComponents laufen, die Karten werden dort neu gebaut.
+function flashCards(ids) {
+  for (const cid of ids) {
+    const card = document.querySelector(`.comp-card[data-id="${cid}"]`);
+    if (!card) continue;
+    card.classList.remove('flash');
+    void card.offsetWidth; // erzwingt einen Neuaufbau, sonst startet die Animation nicht erneut
+    card.classList.add('flash');
+  }
 }
 
 function fmtBytes(bytes) {
@@ -139,6 +165,8 @@ function initNav() {
 }
 
 // ── Komponenten-Ansicht ─────────────────────────────────────────────────────
+const nameOf = (cid) => (state.components.find((c) => c.id === cid) || {}).name || cid;
+
 function isSelected(id) {
   const comp = state.components.find((c) => c.id === id);
   return comp.required || state.settings.selected.includes(id);
@@ -147,16 +175,17 @@ function isSelected(id) {
 function setSelected(id, on) {
   const set = new Set(state.settings.selected);
   const comp = state.components.find((c) => c.id === id);
-
-  const nameOf = (cid) => (state.components.find((c) => c.id === cid) || {}).name || cid;
   const compOf = (cid) => state.components.find((c) => c.id === cid);
+  // Was die App von sich aus mitgeschaltet hat. Wird am Ende zu EINER Meldung
+  // zusammengefasst, statt für jede Abhängigkeit eine eigene zu zeigen.
+  const mitgezogen = [];
 
   if (on) {
     // Abhängigkeiten rekursiv mit aktivieren (auch Abhängigkeiten von Abhängigkeiten)
     const addWithDeps = (cid, isRoot) => {
       if (set.has(cid)) return;
       set.add(cid);
-      if (!isRoot) toast(t('deps.autoEnabled', nameOf(cid)), 'info', 4000);
+      if (!isRoot) mitgezogen.push(cid);
       for (const dep of (compOf(cid) || {}).requires || []) addWithDeps(dep, false);
     };
     addWithDeps(id, true);
@@ -174,7 +203,7 @@ function setSelected(id, on) {
         if (!set.has(other.id)) continue;
         if ((other.requires || []).some((dep) => !set.has(dep))) {
           set.delete(other.id);
-          toast(t('deps.autoDisabled', other.name), 'info', 4000);
+          mitgezogen.push(other.id);
           changed = true;
         }
       }
@@ -185,6 +214,21 @@ function setSelected(id, on) {
   saveSettings();
   renderComponents();
   renderBuildSummary();
+
+  const namen = mitgezogen.map(nameOf).join(', ');
+  if (on) {
+    toast(
+      namen ? t('deps.alsoEnabled', namen) : '',
+      'success',
+      namen ? 5000 : 2200,
+      t('deps.added', comp.name)
+    );
+  } else if (namen) {
+    // Beim Abwählen nur melden, wenn wirklich etwas mit herausgefallen ist
+    toast(t('deps.alsoDisabled', namen), 'info', 5000, t('deps.removed', comp.name));
+  }
+  // Die mitgezogenen Karten kurz aufleuchten lassen, damit die Änderung auffällt
+  if (mitgezogen.length) flashCards(mitgezogen);
 }
 
 function releaseBadge(id) {
@@ -262,6 +306,13 @@ function renderComponents() {
       card.appendChild(headRow);
 
       card.appendChild(el('div', 'comp-desc', pick(comp.description)));
+
+      // Abhängigkeiten offen hinschreiben. Dann überrascht es niemanden, wenn
+      // beim Anklicken noch etwas mit aktiviert wird.
+      const braucht = (comp.requires || []).map(nameOf);
+      if (braucht.length) {
+        card.appendChild(el('div', 'comp-needs', t('comp.needs', braucht.join(', '))));
+      }
 
       const foot = el('div', 'comp-foot');
       const left = el('div', 'comp-foot-badges');

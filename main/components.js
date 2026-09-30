@@ -242,6 +242,9 @@ const COMPONENTS = [
     name: 'sys-patch',
     repo: 'borntohonk/sys-patch',
     category: 'sysmodules',
+    // Das Paket enthält switch/.overlays/sys-patch-overlay.ovl. Ohne
+    // nx-ovlloader ließe sich dieses Overlay gar nicht öffnen.
+    requires: ['ovlloader'],
     tag: 'sigpatch',
     description: {
       de: 'Patcht Signaturprüfungen zur Laufzeit (Ersatz für statische Sigpatches).',

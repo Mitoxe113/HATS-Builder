@@ -143,8 +143,11 @@ window.I18N = {
     'sd.copyError': 'Das Kopieren hat nicht geklappt. {0}',
     'sd.files': '{0} / {1} Dateien',
 
-    'deps.autoEnabled': '{0} habe ich automatisch mit aktiviert, das wird gebraucht.',
-    'deps.autoDisabled': '{0} habe ich deaktiviert, eine Abhängigkeit fehlt.',
+    'deps.added': '{0} hinzugefügt',
+    'deps.removed': '{0} entfernt',
+    'deps.alsoEnabled': 'Mit aktiviert: {0}',
+    'deps.alsoDisabled': 'Mit deaktiviert, die Grundlage fehlt: {0}',
+    'comp.needs': 'Braucht {0}',
     'conflict.warn': '{0} und {1} ersetzen beide dieselbe Datei. Lass am besten nur eines davon aktiv.',
     'init.failed': 'Der Start ist fehlgeschlagen. {0}',
 
@@ -299,8 +302,11 @@ window.I18N = {
     'sd.copyError': "The copy didn't work. {0}",
     'sd.files': '{0} / {1} files',
 
-    'deps.autoEnabled': "I enabled {0} for you, it's needed.",
-    'deps.autoDisabled': 'I disabled {0}, one of its dependencies is missing.',
+    'deps.added': '{0} added',
+    'deps.removed': '{0} removed',
+    'deps.alsoEnabled': 'Also enabled: {0}',
+    'deps.alsoDisabled': 'Disabled as well, the base for it is gone: {0}',
+    'comp.needs': 'Needs {0}',
     'conflict.warn': 'Both {0} and {1} replace the same file. Best to keep only one of them enabled.',
     'init.failed': "The app couldn't start. {0}",
 
