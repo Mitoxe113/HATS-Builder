@@ -93,6 +93,16 @@ function setLanguage(lang) {
   renderDrives();
 }
 
+// Electron stellt jedem Fehler aus dem Hauptprozess einen technischen Vorspann
+// voran: "Error invoking remote method 'sd:copy': Error: …". Den soll niemand
+// lesen müssen, die eigentliche Meldung steht dahinter.
+function fehlertext(err) {
+  const roh = String((err && err.message) || err || '');
+  const ohneKanal = roh.replace(/^Error invoking remote method '[^']*':\s*/, '');
+  // Danach steht oft noch der Fehlertyp davor ("Error: ", "TypeError: ")
+  return ohneKanal.replace(/^[A-Za-z]*Error:\s*/, '').trim() || roh;
+}
+
 function toast(message, kind = 'info', ms = 5000) {
   const node = el('div', `toast ${kind}`, message);
   $('#toasts').appendChild(node);
@@ -380,7 +390,7 @@ async function checkReleases(force) {
     renderReleaseStatus();
   } catch (err) {
     status.className = 'release-status visible warn';
-    status.textContent = t('status.checkFailed', err.message);
+    status.textContent = t('status.checkFailed', fehlertext(err));
   } finally {
     btn.disabled = false;
     btn.querySelector('svg').classList.remove('spin');
@@ -676,6 +686,7 @@ async function build() {
   $('#build-result').hidden = true;
   $('#progress-log').textContent = '';
   setBuildProgress(0, t('build.prep'), '');
+  renderDrives(); // während des Bauens darf nicht auf die Karte kopiert werden
 
   try {
     const summary = await api.buildPack({
@@ -698,14 +709,15 @@ async function build() {
       logLine(`✗ ${t('action.cancel')}`);
       toast(t('build.cancelled'), 'info', 9000);
     } else {
-      logLine(`✗ ${err.message}`);
-      toast(t('toast.buildError', err.message), 'error', 9000);
+      logLine(`✗ ${fehlertext(err)}`);
+      toast(t('toast.buildError', fehlertext(err)), 'error', 9000);
     }
   } finally {
     state.building = false;
     btn.disabled = false;
     btn.querySelector('span').textContent = t('build.create');
     $('#btn-build-cancel').hidden = true;
+    renderDrives();
   }
 }
 
@@ -750,15 +762,19 @@ function renderDrives() {
     }
 
     const btn = el('button', 'btn btn-secondary', t('sd.copyTo', drive.letter));
-    btn.addEventListener('click', () => copyToDrive(drive, btn));
+    // Der gesperrte Zustand kommt aus state, nicht aus einer gemerkten
+    // Schaltfläche. Die Liste wird zwischendurch neu aufgebaut (Ansichtswechsel,
+    // Sprachwechsel), und ein festgehaltener Knopf wäre dann längst ersetzt.
+    btn.disabled = state.copying || state.building;
+    btn.addEventListener('click', () => copyToDrive(drive));
     card.appendChild(btn);
 
     host.appendChild(card);
   }
 }
 
-async function copyToDrive(drive, btn) {
-  if (state.copying) return;
+async function copyToDrive(drive) {
+  if (state.copying || state.building) return;
   const packDir = state.settings.outputDir;
   const info = await api.packInfo(packDir);
   if (!info) {
@@ -798,7 +814,7 @@ async function copyToDrive(drive, btn) {
 
   state.copying = true;
   copyCancelled = false;
-  btn.disabled = true;
+  renderDrives(); // sperrt alle Kopier-Knöpfe
   const cancelBtn = $('#btn-sd-cancel');
   cancelBtn.disabled = false;
   cancelBtn.textContent = t('action.cancel');
@@ -811,11 +827,11 @@ async function copyToDrive(drive, btn) {
     toast(t('sd.copyDone', result.files, fmtBytes(result.bytes), drive.letter), 'success', 9000);
   } catch (err) {
     if (copyCancelled) toast(t('sd.cancelled'), 'info', 12000);
-    else toast(t('sd.copyError', err.message), 'error', 9000);
+    else toast(t('sd.copyError', fehlertext(err)), 'error', 9000);
   } finally {
     state.copying = false;
-    btn.disabled = false;
     cancelBtn.hidden = true;
+    renderDrives(); // gibt die Knöpfe wieder frei
   }
 }
 
@@ -838,7 +854,7 @@ async function applyUpdate() {
   try {
     await api.installUpdate(updateFile);
   } catch (err) {
-    toast(err.message, 'error', 9000);
+    toast(fehlertext(err), 'error', 9000);
     api.revealFile(updateFile);
   }
 }
@@ -896,7 +912,7 @@ async function onUpdateButton() {
     // Direkt anbieten, den Neustart aber dem Nutzer überlassen
     if (confirm(t('update.readyRestart', updateInfo.latest))) applyUpdate();
   } catch (err) {
-    toast(err.message, 'error', 9000);
+    toast(fehlertext(err), 'error', 9000);
   } finally {
     btn.disabled = false;
   }
@@ -972,9 +988,16 @@ async function main() {
     // Bei einem neuen Token darf der Hinweis wieder kommen, sonst bliebe ein
     // zweites kaputtes Token unbemerkt.
     tokenHinweisGezeigt = false;
-    await api.saveSettings(state.settings);
+    // Scheitert das Speichern, darf der Knopf nicht wortlos nichts tun.
+    try {
+      await api.saveSettings(state.settings);
+    } catch (err) {
+      toast(fehlertext(err), 'error', 9000);
+      return;
+    }
     toast(state.settings.githubToken ? t('token.saved') : t('token.removed'), 'success');
     checkReleases(true);
+    checkHos(true);
   });
   $('#btn-token-help').addEventListener('click', () =>
     api.openExternal('https://github.com/settings/personal-access-tokens/new')
@@ -1025,7 +1048,13 @@ async function main() {
 
   $('#btn-reset-settings').addEventListener('click', async () => {
     if (!confirm(t('reset.confirm'))) return;
-    const merged = await api.resetSettings();
+    let merged;
+    try {
+      merged = await api.resetSettings();
+    } catch (err) {
+      toast(fehlertext(err), 'error', 9000);
+      return;
+    }
     // Sprache und Token bleiben, deshalb den Rest gezielt übernehmen
     state.settings.selected = merged.selected;
     state.settings.hekate = merged.hekate;
@@ -1044,11 +1073,16 @@ async function main() {
   checkForUpdate();
 
   // Zustand nur im Testlauf nach außen geben, nicht in der Release-Version
-  if (data.testMode) window.__APP_STATE__ = state;
+  if (data.testMode) {
+    window.__APP_STATE__ = state;
+    window.__FEHLERTEXT__ = fehlertext;
+    window.__render_drives__ = renderDrives;
+    window.__copy_to_drive__ = copyToDrive;
+  }
   window.__APP_READY__ = true;
 }
 
 main().catch((err) => {
   console.error(err);
-  toast(t('init.failed', err.message), 'error', 15000);
+  toast(t('init.failed', fehlertext(err)), 'error', 15000);
 });

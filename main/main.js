@@ -258,6 +258,11 @@ function registerIpc() {
 
   ipcMain.handle('pack:build', async (_e, { outputDir, selectedIds, hekateConfig }) => {
     if (building) throw new Error(mt('err.buildRunning'));
+    // Während eine Karte beschrieben wird, darf der Zielordner nicht neu
+    // gebaut werden. Der Build räumt ihn zuerst aus, und das Kopieren griffe
+    // dann auf Dateien zu, die es nicht mehr gibt. Auf der Karte landete ein
+    // Gemisch aus altem und neuem Stand.
+    if (copying) throw new Error(mt('err.copyRunning'));
     const ziel = packFolder(outputDir);
     building = true;
     buildAbort = new AbortController();
@@ -302,6 +307,9 @@ function registerIpc() {
 
   ipcMain.handle('sd:copy', async (_e, { packDir, driveLetter }) => {
     if (copying) throw new Error(mt('err.copyRunning'));
+    // Umgekehrt genauso: Läuft gerade ein Build, ist der Pack-Ordner in
+    // Bewegung und taugt nicht als Quelle.
+    if (building) throw new Error(mt('err.buildRunning'));
     const info = builder.readPackInfo(packDir);
     // Ein abgebrochener Build hinterlässt einen Marker mit complete:false.
     // So ein halbes Pack darf nicht auf die Karte.

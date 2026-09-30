@@ -275,6 +275,92 @@ async function testDnsWarning(win) {
   return ok;
 }
 
+// Fehler aus dem Hauptprozess landen über IPC im Renderer und von dort in
+// einem Hinweisfenster. Electron hängt dabei einen technischen Vorspann an.
+// Dieser Test hält fest, was der Nutzer am Ende wirklich zu lesen bekommt.
+async function testIpcFehlertexte(win) {
+  const res = await win.webContents.executeJavaScript(`(async () => {
+    const out = [];
+    const faelle = [
+      ['sd:copy ohne Pack', () => window.api.copyToDrive({ packDir: 'C:\\\\gibtsnicht', driveLetter: 'Z:' })],
+      ['pack:build in fremden Ordner', () => window.api.buildPack({ outputDir: 'C:\\\\Windows', selectedIds: [], hekateConfig: {} })],
+    ];
+    for (const [name, fn] of faelle) {
+      try {
+        await fn();
+        out.push({ name, roh: '(kein Fehler)', sauber: '(kein Fehler)' });
+      } catch (e) {
+        out.push({ name, roh: String(e && e.message), sauber: window.__FEHLERTEXT__ ? window.__FEHLERTEXT__(e) : null });
+      }
+    }
+    return out;
+  })()`);
+
+  let ok = true;
+  console.log('— Fehlertexte, wie sie beim Nutzer ankommen —');
+  for (const r of res) {
+    const sauber = r.sauber != null ? r.sauber : r.roh;
+    const technisch = /invoking remote method|^Error:|^TypeError:/i.test(sauber);
+    if (technisch) ok = false;
+    console.log(`${technisch ? 'FAIL' : 'OK  '}  ${r.name}`);
+    console.log(`        roh    : ${r.roh}`);
+    console.log(`        angezeigt: ${sauber}`);
+  }
+  return ok;
+}
+
+// Bauen und Kopieren greifen auf denselben Ordner zu und duerfen sich nicht
+// ueberschneiden. Der Hauptprozess muss das ablehnen, und die Oberflaeche darf
+// keine Knoepfe anbieten, die ins Leere fuehren.
+async function testGleichzeitig(win) {
+  const res = await win.webContents.executeJavaScript(`(async () => {
+    const S = window.__APP_STATE__;
+    const out = [];
+    const knoepfe = () => [...document.querySelectorAll('#drive-list button')];
+    const alleGesperrt = () => knoepfe().length > 0 && knoepfe().every((b) => b.disabled);
+
+    // Laufwerke vortaeuschen, damit es ueberhaupt Knoepfe gibt
+    S.drives = [{ letter: 'Z:', label: 'Test', fileSystem: 'FAT32', size: 100, free: 50, fat32: true }];
+    window.__render_drives__();
+    out.push({ name: 'Knopf da und frei', ok: knoepfe().length === 1 && !knoepfe()[0].disabled });
+
+    // Waehrend "Kopieren" muessen die Knoepfe gesperrt sein
+    S.copying = true; window.__render_drives__();
+    out.push({ name: 'beim Kopieren gesperrt', ok: alleGesperrt() });
+    S.copying = false; window.__render_drives__();
+    out.push({ name: 'danach wieder frei', ok: !knoepfe()[0].disabled });
+
+    // Waehrend "Bauen" ebenso
+    S.building = true; window.__render_drives__();
+    out.push({ name: 'beim Bauen gesperrt', ok: alleGesperrt() });
+    S.building = false; window.__render_drives__();
+    out.push({ name: 'danach wieder frei', ok: !knoepfe()[0].disabled });
+    S.drives = [];
+    window.__render_drives__();
+
+    // Die Sperre im Hauptprozess laesst sich von hier aus nicht ehrlich
+    // pruefen: Ein Build, der lange genug laeuft, braucht echte Downloads.
+    // Dass beide Richtungen abgefragt werden, prueft check.js am Quelltext.
+
+    // Der Renderer darf waehrend eines Vorgangs gar nicht erst loslegen
+    S.copying = true;
+    const vorher = S.copying;
+    await window.__copy_to_drive__({ letter: 'Z:', label: 'Test' });
+    out.push({ name: 'Kopieren startet nicht doppelt', ok: S.copying === vorher });
+    S.copying = false;
+
+    return out;
+  })()`);
+
+  let ok = true;
+  console.log('— Bauen und Kopieren schliessen sich aus —');
+  for (const r of res) {
+    ok = ok && r.ok;
+    console.log(`${r.ok ? 'OK  ' : 'FAIL'}  ${r.name}${r.extra ? '  (' + r.extra + ')' : ''}`);
+  }
+  return ok;
+}
+
 function register(win, app) {
   win.webContents.on('console-message', (_e, _level, message) => {
     console.log('[renderer]', message);
@@ -285,6 +371,8 @@ function register(win, app) {
       if (ok && process.env.HATS_SHOT_DIR) await takeScreenshots(win, process.env.HATS_SHOT_DIR);
       if (ok && process.env.HATS_TEST_DEPS) ok = await testDependencies(win);
       if (ok && process.env.HATS_TEST_DNS) ok = await testDnsWarning(win);
+      if (ok && process.env.HATS_TEST_IPC) ok = await testIpcFehlertexte(win);
+      if (ok && process.env.HATS_TEST_BUSY) ok = await testGleichzeitig(win);
     } catch (err) {
       console.log('TESTFEHLER:', err.message);
       ok = false;
