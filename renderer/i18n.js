@@ -146,7 +146,15 @@ window.I18N = {
     'deps.added': '{0} hinzugefügt',
     'deps.removed': '{0} entfernt',
     'deps.alsoEnabled': 'Mit aktiviert: {0}',
-    'deps.alsoDisabled': 'Mit deaktiviert, die Grundlage fehlt: {0}',
+    'deps.alsoDisabled': 'Mit deaktiviert: {0}',
+
+    'cache.title': 'Zwischenspeicher',
+    'cache.hint':
+      'Heruntergeladene Dateien bleiben liegen, damit das nächste Pack schneller fertig ist. Alte Versionen räumt die App von allein weg. Leeren kannst du trotzdem jederzeit, verloren geht dabei nichts.',
+    'cache.clear': 'Leeren',
+    'cache.size': '{0} belegt',
+    'cache.empty': 'Nichts gespeichert',
+    'cache.cleared': '{0} freigegeben.',
     'comp.needs': 'Braucht {0}',
     'conflict.warn': '{0} und {1} ersetzen beide dieselbe Datei. Lass am besten nur eines davon aktiv.',
     'init.failed': 'Der Start ist fehlgeschlagen. {0}',
@@ -305,7 +313,15 @@ window.I18N = {
     'deps.added': '{0} added',
     'deps.removed': '{0} removed',
     'deps.alsoEnabled': 'Also enabled: {0}',
-    'deps.alsoDisabled': 'Disabled as well, the base for it is gone: {0}',
+    'deps.alsoDisabled': 'Also disabled: {0}',
+
+    'cache.title': 'Cache',
+    'cache.hint':
+      'Downloaded files are kept so the next pack is done faster. Old versions are cleaned up automatically. You can still clear it any time, nothing is lost.',
+    'cache.clear': 'Clear',
+    'cache.size': '{0} used',
+    'cache.empty': 'Nothing stored',
+    'cache.cleared': '{0} freed.',
     'comp.needs': 'Needs {0}',
     'conflict.warn': 'Both {0} and {1} replace the same file. Best to keep only one of them enabled.',
     'init.failed': "The app couldn't start. {0}",

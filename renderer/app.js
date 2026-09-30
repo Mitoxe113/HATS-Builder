@@ -970,6 +970,18 @@ async function onUpdateButton() {
 }
 
 // ── Einstellungen-Fenster ────────────────────────────────────────────────────
+// Zeigt an, wie viel Platz die heruntergeladenen Dateien belegen.
+async function renderCacheSize() {
+  const feld = $('#cache-size');
+  if (!feld) return;
+  try {
+    const info = await api.cacheInfo();
+    feld.textContent = info && info.bytes ? t('cache.size', fmtBytes(info.bytes)) : t('cache.empty');
+  } catch {
+    feld.textContent = '';
+  }
+}
+
 function renderLangButtons() {
   const host = $('#lang-toggle');
   host.textContent = '';
@@ -1004,6 +1016,21 @@ function initSettingsModal() {
   initModal('#notes-modal', '#btn-notes-close');
   $('#btn-settings').addEventListener('click', () => {
     $('#settings-modal').hidden = false;
+    // Beim Öffnen frisch nachsehen, der Wert ändert sich mit jedem Build
+    renderCacheSize();
+  });
+  $('#btn-clear-cache').addEventListener('click', async () => {
+    const btn = $('#btn-clear-cache');
+    btn.disabled = true;
+    try {
+      const weg = await api.clearCache();
+      toast(t('cache.cleared', fmtBytes(weg && weg.bytes)), 'success', 4000);
+    } catch (err) {
+      toast(fehlertext(err), 'error', 9000);
+    } finally {
+      btn.disabled = false;
+      renderCacheSize();
+    }
   });
   $('#btn-notes-open').addEventListener('click', () => {
     if (notesRepoUrl) api.openExternal(notesRepoUrl);

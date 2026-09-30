@@ -131,6 +131,14 @@ const M = {
     de: '{0} liegt schon im Zwischenspeicher',
     en: '{0} is already cached',
   },
+  'log.retry': {
+    de: '{0} hat nicht geklappt, Versuch {1} von {2} …',
+    en: '{0} did not work, attempt {1} of {2} …',
+  },
+  'err.cacheBusy': {
+    de: 'Während ein Pack gebaut wird, lässt sich der Zwischenspeicher nicht leeren.',
+    en: 'The cache cannot be cleared while a pack is being built.',
+  },
   'log.prepareDir': {
     de: 'Zielordner wird vorbereitet: {0}',
     en: 'Preparing the target folder: {0}',

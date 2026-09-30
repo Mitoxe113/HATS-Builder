@@ -290,6 +290,15 @@ function registerIpc() {
     return info;
   });
 
+  // ── Zwischenspeicher der Downloads ────────────────────────────────────────
+  ipcMain.handle('cache:info', () => builder.cacheInfo());
+
+  ipcMain.handle('cache:clear', () => {
+    // Mitten im Bauen würde das die gerade benötigten Dateien wegziehen
+    if (building) throw new Error(mt('err.cacheBusy'));
+    return builder.clearCache();
+  });
+
   ipcMain.handle('settings:reset', () => {
     const merged = saveSettings(resettableDefaults());
     return merged;

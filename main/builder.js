@@ -26,6 +26,86 @@ function throwIfAborted(signal) {
   if (signal && signal.aborted) throw new Error(mt('err.cancelled'));
 }
 
+// Ein Netzaussetzer soll nicht einen Build mit über 30 Dateien kippen.
+const DOWNLOAD_VERSUCHE = 3;
+
+// Wartet, lässt sich aber vom Abbruch des Nutzers sofort unterbrechen. Ein
+// nacktes setTimeout würde die Pause erst auslaufen lassen.
+function schlaf(ms, signal) {
+  return new Promise((resolve, reject) => {
+    const fertig = () => {
+      clearTimeout(timer);
+      if (signal) signal.removeEventListener('abort', abbruch);
+      resolve();
+    };
+    const abbruch = () => {
+      clearTimeout(timer);
+      reject(new Error(mt('err.cancelled')));
+    };
+    const timer = setTimeout(fertig, ms);
+    if (signal) signal.addEventListener('abort', abbruch, { once: true });
+  });
+}
+
+// Von jeder Komponente bleibt nur die zuletzt geladene Fassung liegen. Sonst
+// wüchse der Zwischenspeicher mit jedem Update weiter: Bei über 30 Komponenten
+// und mehreren hundert Megabyte pro Durchgang sind das schnell Gigabytes, die
+// niemand je wieder braucht.
+function pruneAlteVersionen(componentId, behalten) {
+  const basis = path.join(cacheDir, componentId);
+  let eintraege;
+  try {
+    eintraege = fs.readdirSync(basis, { withFileTypes: true });
+  } catch {
+    return;
+  }
+  for (const e of eintraege) {
+    if (!e.isDirectory() || e.name === behalten) continue;
+    try {
+      fs.rmSync(path.join(basis, e.name), { recursive: true, force: true });
+    } catch {
+      /* Aufräumen ist Kür, ein Fehler darf den Build nicht kippen */
+    }
+  }
+}
+
+// Ein einzelner Ladeversuch. Schreibt in die .part-Datei, meldet Fortschritt.
+async function ladeEinmal(component, asset, tmp, emit, signal) {
+  const res = await fetch(asset.url, { headers: { 'User-Agent': 'HATS-Builder' }, signal });
+  if (!res.ok || !res.body) {
+    const err = new Error(mt('err.downloadFailed', asset.name, res.status));
+    // Ein klares Nein vom Server (404, 403 …) wird durch Wiederholen nicht
+    // besser. Nur Aussetzer und Serverfehler sind einen zweiten Versuch wert.
+    err.dauerhaft = res.status >= 400 && res.status < 500;
+    throw err;
+  }
+
+  const total = Number(res.headers.get('content-length')) || asset.size || 0;
+  const file = fs.createWriteStream(tmp);
+  let done = 0;
+  let lastEmit = 0;
+
+  try {
+    for await (const chunk of res.body) {
+      // Backpressure beachten: bei vollem Puffer auf 'drain' warten, sonst
+      // würde eine große Datei komplett im RAM landen
+      if (!file.write(chunk)) {
+        await new Promise((resolve) => file.once('drain', resolve));
+      }
+      done += chunk.length;
+      const now = Date.now();
+      if (now - lastEmit > 100) {
+        lastEmit = now;
+        emit({ type: 'asset-progress', component: component.id, asset: asset.name, done, total });
+      }
+    }
+    await new Promise((resolve, reject) => file.end((err) => (err ? reject(err) : resolve())));
+  } catch (err) {
+    file.destroy();
+    throw err;
+  }
+}
+
 async function downloadAsset(component, release, asset, emit, signal) {
   // Ein Release ohne Tag darf den Download nicht kippen, der Ordnername ist nur
   // zur Unterscheidung da.
@@ -42,53 +122,75 @@ async function downloadAsset(component, release, asset, emit, signal) {
     const st = fs.statSync(dest);
     if (asset.size ? st.size === asset.size : st.size > 0) {
       emit({ type: 'log', text: mt('log.cached', asset.name) });
+      pruneAlteVersionen(component.id, tagOrdner);
       return dest;
     }
   } catch {
     /* nicht vorhanden → laden */
   }
 
-  const res = await fetch(asset.url, { headers: { 'User-Agent': 'HATS-Builder' }, signal });
-  if (!res.ok || !res.body) {
-    throw new Error(mt('err.downloadFailed', asset.name, res.status));
-  }
-
-  const total = Number(res.headers.get('content-length')) || asset.size || 0;
   const tmp = `${dest}.part`;
-  const file = fs.createWriteStream(tmp);
-  let done = 0;
-  let lastEmit = 0;
-
-  try {
-    for await (const chunk of res.body) {
-      // Backpressure beachten: bei vollem Puffer auf 'drain' warten, sonst
-      // würde eine große Datei komplett im RAM landen
-      if (!file.write(chunk)) {
-        await new Promise((resolve) => file.once('drain', resolve));
-      }
-      done += chunk.length;
-      const now = Date.now();
-      if (now - lastEmit > 100) {
-        lastEmit = now;
-        emit({
-          type: 'asset-progress',
-          component: component.id,
-          asset: asset.name,
-          done,
-          total,
-        });
+  let letzterFehler = null;
+  for (let versuch = 1; versuch <= DOWNLOAD_VERSUCHE; versuch++) {
+    throwIfAborted(signal);
+    try {
+      await ladeEinmal(component, asset, tmp, emit, signal);
+      fs.renameSync(tmp, dest);
+      pruneAlteVersionen(component.id, tagOrdner);
+      return dest;
+    } catch (err) {
+      fs.rmSync(tmp, { force: true });
+      // Abbruch des Nutzers und klare Absagen des Servers nicht wiederholen
+      if ((signal && signal.aborted) || err.dauerhaft) throw err;
+      letzterFehler = err;
+      if (versuch < DOWNLOAD_VERSUCHE) {
+        emit({ type: 'log', text: mt('log.retry', asset.name, versuch + 1, DOWNLOAD_VERSUCHE) });
+        await schlaf(600 * versuch, signal);
       }
     }
-    await new Promise((resolve, reject) =>
-      file.end((err) => (err ? reject(err) : resolve()))
-    );
-    fs.renameSync(tmp, dest);
-  } catch (err) {
-    file.destroy();
-    fs.rmSync(tmp, { force: true });
-    throw err;
   }
-  return dest;
+  throw letzterFehler;
+}
+
+// Größe des Zwischenspeichers, für die Anzeige in den Einstellungen.
+function cacheInfo() {
+  let bytes = 0;
+  const walk = (d) => {
+    let eintraege;
+    try {
+      eintraege = fs.readdirSync(d, { withFileTypes: true });
+    } catch {
+      return;
+    }
+    for (const e of eintraege) {
+      const p = path.join(d, e.name);
+      if (e.isDirectory()) walk(p);
+      else {
+        try {
+          bytes += fs.statSync(p).size;
+        } catch {
+          /* gerade gelöscht */
+        }
+      }
+    }
+  };
+  if (cacheDir) walk(cacheDir);
+  return { bytes };
+}
+
+// Leert den Zwischenspeicher. Die Dateien werden beim nächsten Bauen wieder
+// geladen, verloren geht dabei nichts.
+function clearCache() {
+  if (!cacheDir) return { bytes: 0 };
+  const vorher = cacheInfo().bytes;
+  try {
+    for (const e of fs.readdirSync(cacheDir)) {
+      fs.rmSync(path.join(cacheDir, e), { recursive: true, force: true });
+    }
+  } catch {
+    /* Reste bleiben liegen, beim nächsten Mal klappt es */
+  }
+  return { bytes: vorher - cacheInfo().bytes };
 }
 
 // Verhindert Zip-Slip: der Zielpfad muss innerhalb von base bleiben.
@@ -406,6 +508,9 @@ function readPackInfo(dir) {
 module.exports = {
   init,
   buildPack,
+  cacheInfo,
+  clearCache,
+  downloadAsset,
   expandSelection,
   applyAsset,
   preparePackDir,

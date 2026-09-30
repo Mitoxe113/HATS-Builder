@@ -13,6 +13,8 @@ contextBridge.exposeInMainWorld('api', {
   cancelBuild: () => ipcRenderer.invoke('pack:cancel'),
   packInfo: (dir) => ipcRenderer.invoke('pack:info', dir),
   resetSettings: () => ipcRenderer.invoke('settings:reset'),
+  cacheInfo: () => ipcRenderer.invoke('cache:info'),
+  clearCache: () => ipcRenderer.invoke('cache:clear'),
   listDrives: () => ipcRenderer.invoke('sd:list'),
   previewCopy: (args) => ipcRenderer.invoke('sd:preview', args),
   copyToDrive: (args) => ipcRenderer.invoke('sd:copy', args),

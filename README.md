@@ -42,6 +42,7 @@ Um Updates musst du dich nicht kümmern. Beim Start schaut die App nach, blendet
 ```
 npm install
 npm start        (Entwicklungsmodus)
+npm test         (Prüfungen)
 npm run dist     (EXE bauen)
 ```
 
@@ -97,6 +98,7 @@ Updates take care of themselves. The app checks on startup, shows a bar at the t
 ```
 npm install
 npm start        (run in dev mode)
+npm test         (run the checks)
 npm run dist     (build the EXE)
 ```
 

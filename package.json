@@ -13,6 +13,8 @@
   "homepage": "https://github.com/Mitoxe113/HATS-Builder",
   "scripts": {
     "start": "electron .",
+    "test": "node tools/test.js",
+    "smoke": "node tools/smoke.js",
     "dist": "electron-builder --win"
   },
   "dependencies": {
@@ -36,8 +38,12 @@
     "win": {
       "icon": "build/icon.ico",
       "target": [
-        { "target": "portable" },
-        { "target": "nsis" }
+        {
+          "target": "portable"
+        },
+        {
+          "target": "nsis"
+        }
       ]
     },
     "portable": {
