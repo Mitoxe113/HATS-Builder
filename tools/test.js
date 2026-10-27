@@ -469,9 +469,56 @@ async function downloadPruefungen() {
   }
 }
 
+// Ein Entwickler baut sein Release um (so geschehen bei sys-patch), und die
+// erwartete Datei fehlt. Der Build muss das merken, BEVOR er den Zielordner
+// ausräumt. Sonst ist das vorhandene, funktionierende Pack weg.
+async function releaseUmgebautPruefungen() {
+  abschnitt('Umgebautes Release');
+  const github = require(path.join(WURZEL, 'main/github.js'));
+  const echtesFetchLatest = github.fetchLatest;
+  const wurzel = fs.mkdtempSync(path.join(os.tmpdir(), 'hats-umbau-'));
+  try {
+    const komp = { assets: [{ match: /^paket-.*\.zip$/ }, { match: /^extra\.bin$/ }] };
+    pruefe('passendes Release wird erkannt',
+      !builder.fehltAsset(komp, { assets: [{ name: 'paket-1.0.zip' }, { name: 'extra.bin' }] }));
+    pruefe('fehlende Datei wird erkannt',
+      builder.fehltAsset(komp, { assets: [{ name: 'paket-1.0.zip' }] }));
+    pruefe('leeres Release wird erkannt', builder.fehltAsset(komp, { assets: [] }));
+    pruefe('fehlende Asset-Liste kippt nicht', builder.fehltAsset(komp, {}) === true);
+
+    // Ein bestehendes, vollständiges Pack im Zielordner
+    builder.init(wurzel);
+    const ziel = path.join(wurzel, 'Switch-SD-Pack');
+    fs.mkdirSync(path.join(ziel, 'switch'), { recursive: true });
+    fs.writeFileSync(path.join(ziel, 'switch', 'vorhanden.nro'), 'funktioniert');
+    fs.writeFileSync(path.join(ziel, builder.MARKER),
+      JSON.stringify({ complete: true, files: [path.join('switch', 'vorhanden.nro')] }));
+
+    // Jedes Release kommt ohne Dateien zurück, wie bei sys-patch "no-release"
+    github.fetchLatest = async () => ({ tag: 'no-release', assets: [] });
+    let meldung = null;
+    try {
+      await builder.buildPack({ outputDir: ziel, selectedIds: [], hekateConfig: {} }, () => {});
+    } catch (e) {
+      meldung = e.message;
+    }
+    pruefe('der Build bricht ab', meldung !== null);
+    pruefe('die Meldung nennt die betroffenen Komponenten', /Atmosph/.test(meldung || ''), meldung);
+    pruefe('das vorhandene Pack bleibt unangetastet',
+      fs.readFileSync(path.join(ziel, 'switch', 'vorhanden.nro'), 'utf8') === 'funktioniert');
+    pruefe('der Marker bleibt vollständig',
+      (builder.readPackInfo(ziel) || {}).complete === true);
+  } finally {
+    github.fetchLatest = echtesFetchLatest;
+    fs.rmSync(wurzel, { recursive: true, force: true });
+  }
+}
+
 // ── Ergebnis ────────────────────────────────────────────────────────────────
 downloadPruefungen()
   .catch((e) => nichtOk('Download-Prüfungen abgebrochen', e.message))
+  .then(() => releaseUmgebautPruefungen())
+  .catch((e) => nichtOk('Prüfung zum umgebauten Release abgebrochen', e.message))
   .then(() => {
     console.log('');
     if (fehler) {

@@ -60,6 +60,10 @@ const M = {
     de: '{0}: Kein passendes Release-Asset gefunden (erwartet: {1}). Eventuell hat sich das Release-Format geändert.',
     en: '{0}: No matching release asset found (expected: {1}). The release format may have changed.',
   },
+  'err.assetsMissing': {
+    de: 'Bei {0} passt das aktuelle Release nicht mehr, die erwartete Datei fehlt. Am Zielordner wurde nichts verändert. Wähl die Komponente ab oder warte auf ein Update von HATS Builder.',
+    en: 'The current release of {0} no longer matches, the expected file is missing. Nothing in the target folder was changed. Deselect the component or wait for a HATS Builder update.',
+  },
   'err.downloadFailed': {
     de: 'Download von {0} fehlgeschlagen (HTTP {1})',
     en: 'Download of {0} failed (HTTP {1})',

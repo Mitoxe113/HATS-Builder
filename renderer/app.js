@@ -249,6 +249,12 @@ function releaseBadge(id) {
   }
   wrap.appendChild(version);
   if (rel.publishedAt) wrap.appendChild(el('span', 'badge date', fmtDate(rel.publishedAt)));
+  // Das Release ist da, enthält aber nicht mehr die Datei, die wir brauchen
+  if (rel.assetMissing) {
+    const warnung = el('span', 'badge error', t('badge.assetMissing'));
+    warnung.title = t('badge.assetMissing.title');
+    wrap.appendChild(warnung);
+  }
   return wrap;
 }
 
@@ -371,9 +377,17 @@ function renderReleaseStatus() {
   const rateLimitMsg =
     (all.find((r) => !r.ok && r.rateLimited) || {}).error ||
     (all.find((r) => r.ok && r.stale && r.staleRateLimited) || {}).staleReason;
+  // Nur ausgewählte Komponenten zählen hier: Ein unpassendes Release bei etwas,
+  // das gar nicht ins Pack soll, ist für den Moment kein Grund zur Warnung.
+  const unpassend = Object.entries(state.releases)
+    .filter(([id, r]) => r.ok && r.assetMissing && state.components.some((c) => c.id === id) && isSelected(id))
+    .map(([id]) => nameOf(id));
   if (failed) {
     status.className = 'release-status visible warn';
     status.textContent = rateLimitMsg ? t('status.failed', failed, rateLimitMsg) : t('status.failedGeneric', failed);
+  } else if (unpassend.length) {
+    status.className = 'release-status visible warn';
+    status.textContent = t('status.assetMissing', unpassend.join(', '));
   } else if (stale) {
     status.className = 'release-status visible warn';
     status.textContent = rateLimitMsg ? t('status.staleRate', rateLimitMsg) : t('status.staleOffline');

@@ -223,7 +223,9 @@ function registerIpc() {
       COMPONENTS.map(async (c) => {
         try {
           const r = await github.fetchLatest(c, { force });
-          results[c.id] = { ok: true, ...r };
+          // Schon hier prüfen, ob das Release zu den Regeln passt. Dann steht
+          // das Problem auf der Karte, bevor jemand auf Erstellen drückt.
+          results[c.id] = { ok: true, ...r, assetMissing: builder.fehltAsset(c, r) };
         } catch (err) {
           results[c.id] = { ok: false, error: err.message, rateLimited: !!err.rateLimited };
         }

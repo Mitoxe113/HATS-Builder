@@ -331,6 +331,13 @@ function dirStats(dir) {
   return { files, bytes };
 }
 
+// true, wenn für mindestens eine Regel der Komponente keine passende Datei im
+// Release liegt. Wird vor dem Bauen und schon bei der Versionsabfrage geprüft.
+function fehltAsset(comp, release) {
+  const vorhanden = (release && release.assets) || [];
+  return comp.assets.some((rule) => !vorhanden.some((a) => rule.match.test(a.name)));
+}
+
 // Löst Abhängigkeiten transitiv auf: Pflicht-Komponenten kommen immer dazu,
 // und jede requires-Kette wird vollständig mit eingeschlossen. So kann auch
 // eine unvollständige (z. B. alte gespeicherte) Auswahl kein kaputtes Pack
@@ -370,6 +377,15 @@ async function buildPack({ outputDir, selectedIds, hekateConfig, signal }, emit)
   for (const comp of selected) {
     throwIfAborted(signal);
     releases[comp.id] = await github.fetchLatest(comp);
+  }
+
+  // Erst prüfen, ob jedes Release noch zu seinen Regeln passt, und zwar bevor
+  // der Zielordner angefasst wird. Sonst räumt der Build ein funktionierendes
+  // Pack ab und scheitert dann mittendrin an einer Komponente, deren Entwickler
+  // das Release umgebaut hat. Genau so ist es mit sys-patch passiert.
+  const unpassend = selected.filter((comp) => fehltAsset(comp, releases[comp.id]));
+  if (unpassend.length) {
+    throw new Error(mt('err.assetsMissing', unpassend.map((c) => c.name).join(', ')));
   }
 
   emit({ type: 'log', text: mt('log.prepareDir', outputDir) });
@@ -511,6 +527,7 @@ module.exports = {
   cacheInfo,
   clearCache,
   downloadAsset,
+  fehltAsset,
   expandSelection,
   applyAsset,
   preparePackDir,

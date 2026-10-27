@@ -240,7 +240,10 @@ const COMPONENTS = [
   {
     id: 'syspatch',
     name: 'sys-patch',
-    repo: 'borntohonk/sys-patch',
+    // Früher borntohonk/sys-patch. Dort gibt es seit Oktober 2026 nur noch ein
+    // leeres Platzhalter-Release ("no-release"), dessen Text ausdrücklich auf
+    // impeeza/sys-patch verweist. Gleicher Paketaufbau, die Regel passt weiter.
+    repo: 'impeeza/sys-patch',
     category: 'sysmodules',
     // Das Paket enthält switch/.overlays/sys-patch-overlay.ovl. Ohne
     // nx-ovlloader ließe sich dieses Overlay gar nicht öffnen.

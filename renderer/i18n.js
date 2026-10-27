@@ -53,6 +53,9 @@ window.I18N = {
     'badge.unreachable': 'nicht erreichbar',
     'badge.required': 'Pflicht',
     'badge.offline': ' (offline)',
+    'badge.assetMissing': 'Release passt nicht',
+    'badge.assetMissing.title':
+      'Im aktuellen Release fehlt die Datei, die HATS Builder erwartet. Vermutlich hat der Entwickler etwas umgebaut. Mit dieser Komponente lässt sich gerade kein Pack bauen.',
     'tag.sigpatch': 'Sigpatch',
     'tag.sigpatch.title': 'Umgeht Signaturprüfungen. Aktiviere das bewusst.',
     'tag.thirdparty': 'Drittanbieter',
@@ -61,6 +64,8 @@ window.I18N = {
     'status.checking': 'Ich frage die neuesten Versionen bei GitHub ab …',
     'status.failed': 'Für {0} Komponente(n) gibt es keine Daten. {1}',
     'status.failedGeneric': '{0} Komponente(n) konnten nicht abgefragt werden. Prüf mal deine Internetverbindung.',
+    'status.assetMissing':
+      'Bei {0} passt das aktuelle Release nicht mehr. Wähl die Komponente ab, sonst lässt sich das Pack nicht bauen.',
     'status.staleRate': 'Ich zeige die gespeicherten Versionen. {0}',
     'status.staleOffline': 'Offline. Ich zeige die zuletzt bekannten Versionen aus dem Cache.',
     'status.allCurrent': 'Alles auf dem neuesten Stand. Das jüngste Release ist vom {0}.',
@@ -220,6 +225,9 @@ window.I18N = {
     'badge.unreachable': 'unreachable',
     'badge.required': 'Required',
     'badge.offline': ' (offline)',
+    'badge.assetMissing': 'Release mismatch',
+    'badge.assetMissing.title':
+      'The current release is missing the file HATS Builder expects. The developer probably changed something. A pack cannot be built with this component right now.',
     'tag.sigpatch': 'Sigpatch',
     'tag.sigpatch.title': 'Bypasses signature checks. Enable it on purpose.',
     'tag.thirdparty': 'Third-party',
@@ -228,6 +236,8 @@ window.I18N = {
     'status.checking': "I'm fetching the latest versions from GitHub …",
     'status.failed': 'No data for {0} component(s). {1}',
     'status.failedGeneric': "{0} component(s) couldn't be queried. Check your internet connection.",
+    'status.assetMissing':
+      'The current release of {0} no longer matches. Deselect it, otherwise the pack cannot be built.',
     'status.staleRate': "I'm showing the cached versions. {0}",
     'status.staleOffline': "You're offline, so I'm showing the last known versions from the cache.",
     'status.allCurrent': 'Everything is up to date. The latest release is from {0}.',
