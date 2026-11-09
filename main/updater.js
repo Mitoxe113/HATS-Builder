@@ -125,7 +125,12 @@ async function installSetup(datei, app) {
 // überschreiben. Deshalb übernimmt ein kleines Skript: Es wartet, bis wir
 // beendet sind, tauscht die Datei, startet die neue und räumt sich selbst weg.
 function buildPortableScript(datei, ziel, pid, marker) {
-  return [
+  // Das Skript beginnt mit einer UTF-8-Kennung (BOM). Windows PowerShell 5.1
+  // liest eine .ps1 ohne diese Kennung in der alten ANSI-Codepage. Dann wird
+  // aus "Jürgen" im Pfad "JÃ¼rgen", und weil os.tmpdir() den Benutzernamen
+  // enthält, fände das Skript weder Marker noch EXE. Das Update scheiterte
+  // bei jedem, dessen Benutzername einen Umlaut hat.
+  return '\uFEFF' + [
     '$ErrorActionPreference = "SilentlyContinue"',
     // Erste Amtshandlung: melden, dass wir laufen. Erst wenn die App das
     // sieht, beendet sie sich. Sonst stünde der Nutzer ohne App und ohne

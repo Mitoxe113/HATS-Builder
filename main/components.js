@@ -148,7 +148,11 @@ const COMPONENTS = [
   {
     id: 'sphaira',
     name: 'Sphaira',
-    repo: 'ITotalJustice/sphaira',
+    // Früher ITotalJustice/sphaira. Der Entwickler hat das Repo an seinen
+    // Mitbetreuer NaGaa95 übertragen, gleiche Historie, gleiche
+    // Releases. Der alte Name leitet nur weiter, solange niemand dort ein neues
+    // Repo anlegt. Danach käme der Download von dort, also lieber direkt.
+    repo: 'NaGaa95/sphaira',
     category: 'apps',
     description: {
       de: 'Moderner Homebrew-Menü-Ersatz mit integriertem App-Store und Dateibrowser.',
@@ -203,7 +207,10 @@ const COMPONENTS = [
   {
     id: 'themezer',
     name: 'Themezer-NX',
-    repo: 'suchmememanyskill/themezer-nx',
+    // Früher suchmememanyskill/themezer-nx. Das Repo wurde in die Organisation
+    // des Themezer-Projekts übertragen. Aus demselben Grund wie bei Sphaira
+    // steht hier der neue Name statt der Weiterleitung.
+    repo: 'ThemezerNX/Themezer-NX',
     category: 'apps',
     requires: ['themeinjector'],
     description: {

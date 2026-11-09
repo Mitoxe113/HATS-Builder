@@ -194,6 +194,14 @@ pruefe('portable bekommt niemals den Installer untergeschoben',
   updater.pickAsset([{ name: 'X-Setup.exe' }], true) === null);
 pruefe('Austausch-Skript prüft, ob das Kopieren geklappt hat',
   /\$kopiert/.test(updater.buildPortableScript('a', 'b', 1, 'c')));
+{
+  // Benutzername mit Umlaut, wie er in os.tmpdir() steckt
+  const umlaut = 'C:\\Users\\Jürgen\\AppData\\Local\\Temp\\hats.laeuft';
+  const bytes = Buffer.from(updater.buildPortableScript('a.exe', 'b.exe', 1, umlaut), 'utf8');
+  pruefe('Austausch-Skript beginnt mit UTF-8-Kennung (sonst liest PowerShell 5.1 Umlaute falsch)',
+    bytes[0] === 0xef && bytes[1] === 0xbb && bytes[2] === 0xbf);
+  pruefe('Umlaut im Pfad bleibt im Skript erhalten', bytes.toString('utf8').includes('Jürgen'));
+}
 
 // ── Firmware-Abgleich ───────────────────────────────────────────────────────
 abschnitt('Firmware-Abgleich');
@@ -279,7 +287,13 @@ abschnitt('Schutz vor Pfad-Ausbruch');
 {
   const basis = path.join(os.tmpdir(), 'hats-test-basis');
   let abgewehrt = 0;
-  const boese = ['../evil.txt', '..\\evil.txt', 'a/../../evil', '/abs/evil', 'C:\\Windows\\evil'];
+  // Backslash und Laufwerksbuchstabe sind nur unter Windows Pfadtrenner. Unter
+  // Linux ist "..\\evil.txt" ein ganz normaler Dateiname im Zielordner, dort
+  // wäre die Erwartung schlicht falsch und der Test schlüge ohne Fehler im Code
+  // fehl. Die App läuft unter Windows, und dort (auch im Release-Workflow)
+  // werden alle fünf Fälle geprüft.
+  const boese = ['../evil.txt', 'a/../../evil', '/abs/evil'];
+  if (process.platform === 'win32') boese.push('..\\evil.txt', 'C:\\Windows\\evil');
   for (const p of boese) {
     try { builder.safeJoin(basis, p); } catch { abgewehrt += 1; }
   }
