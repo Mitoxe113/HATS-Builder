@@ -1,26 +1,90 @@
-# Baut die Windows-EXEs und veroeffentlicht das Release, sobald ein Tag vX.Y.Z
-# gepusht wird. Gedacht fuer die woechentliche Cloud-Pruefung, die auf Linux
-# laeuft und deshalb selbst keine Windows-Dateien bauen kann. Funktioniert
-# genauso, wenn der Tag von Hand gepusht wird.
+# Baut die Windows-EXEs und veroeffentlicht das Release.
+#
+# Ausgeloest wird das auf zwei Wegen:
+#   1. Ein Push auf main, dessen Version aus package.json noch keinen Tag hat.
+#      Das ist der normale Weg fuer die woechentliche Cloud-Pruefung. Sie darf
+#      keine Tags pushen (der Git-Proxy der Sitzung blockt das), sondern
+#      oeffnet einen Pull Request. Sobald der gemergt ist, landet die neue
+#      Version auf main, und dieser Workflow legt Tag und Release selbst an.
+#   2. Ein von Hand gepushter Tag vX.Y.Z, wie bisher.
+# Von Hand gestartet (workflow_dispatch) wird nur gebaut, nichts
+# veroeffentlicht. Zum Pruefen, ob der Build auf GitHub noch durchlaeuft.
+#
+# Ein Push auf main ohne neue Version (Tag gibt es schon) baut nichts. Sonst
+# liefe bei jedem Commit ein teurer Windows-Build ins Leere.
 #
 # Die Release-Notes stehen in .github/release-notes.md und werden vor dem
-# Taggen fuer genau diese Version neu geschrieben.
+# Versionssprung fuer genau diese Version neu geschrieben.
 
 name: Release
 
 on:
   push:
+    branches: [main]
     tags: ['v*.*.*']
-  # Von Hand gestartet wird nur gebaut, nichts veroeffentlicht. Zum Pruefen,
-  # ob der Build auf GitHub noch durchlaeuft.
   workflow_dispatch:
 
 permissions:
   contents: write
 
+# Ein Tag-Push und ein main-Push kurz hintereinander duerfen nicht gleichzeitig
+# dasselbe Release anlegen. Nacheinander sieht der zweite Lauf, dass es schon
+# da ist.
+concurrency:
+  group: release
+  cancel-in-progress: false
+
 jobs:
+  # Entscheidet billig auf Linux, ob ueberhaupt gebaut werden muss.
+  pruefen:
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.v.outputs.tag }}
+      bauen: ${{ steps.v.outputs.bauen }}
+      veroeffentlichen: ${{ steps.v.outputs.veroeffentlichen }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Version und Tag bestimmen
+        id: v
+        shell: bash
+        run: |
+          tag="v$(node -p "require('./package.json').version")"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+
+          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
+            echo "Von Hand gestartet: nur bauen."
+            echo "bauen=true" >> "$GITHUB_OUTPUT"
+            echo "veroeffentlichen=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if [ "$GITHUB_REF_TYPE" = "tag" ]; then
+            # Ein Tag, der nicht zur Version in package.json passt, wuerde eine
+            # EXE veroeffentlichen, die sich selbst fuer eine andere Version
+            # haelt. Dann meldet der Updater endlos ein Update oder gar keins.
+            if [ "$tag" != "$GITHUB_REF_NAME" ]; then
+              echo "Tag $GITHUB_REF_NAME passt nicht zu package.json ($tag)"; exit 1
+            fi
+          elif git ls-remote --exit-code --tags origin "refs/tags/$tag" >/dev/null; then
+            echo "$tag ist schon veroeffentlicht, nichts zu tun."
+            echo "bauen=false" >> "$GITHUB_OUTPUT"
+            echo "veroeffentlichen=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          else
+            echo "Neue Version $tag auf main, wird veroeffentlicht."
+          fi
+
+          test -s .github/release-notes.md || { echo "release-notes.md fehlt oder ist leer"; exit 1; }
+          echo "bauen=true" >> "$GITHUB_OUTPUT"
+          echo "veroeffentlichen=true" >> "$GITHUB_OUTPUT"
+
   release:
+    needs: pruefen
+    if: needs.pruefen.outputs.bauen == 'true'
     runs-on: windows-latest
+    env:
+      TAG: ${{ needs.pruefen.outputs.tag }}
     steps:
       - uses: actions/checkout@v4
 
@@ -28,19 +92,6 @@ jobs:
         with:
           node-version: 22
           cache: npm
-
-      # Ein Tag, der nicht zur Version in package.json passt, wuerde eine EXE
-      # veroeffentlichen, die sich selbst fuer eine andere Version haelt. Dann
-      # meldet der Updater endlos ein Update oder gar keins.
-      - name: Tag gegen package.json pruefen
-        if: github.ref_type == 'tag'
-        shell: bash
-        run: |
-          v=$(node -p "require('./package.json').version")
-          if [ "v$v" != "$GITHUB_REF_NAME" ]; then
-            echo "Tag $GITHUB_REF_NAME passt nicht zu package.json ($v)"; exit 1
-          fi
-          test -s .github/release-notes.md || { echo "release-notes.md fehlt oder ist leer"; exit 1; }
 
       - run: npm ci
       - run: npm test
@@ -54,24 +105,29 @@ jobs:
       # Der Updater erkennt die Bauart an der Endung -Portable.exe bzw.
       # -Setup.exe, deshalb kommen nur diese Namen ins Release.
       - name: Versionierte Kopien
-        if: github.ref_type == 'tag'
+        if: needs.pruefen.outputs.veroeffentlichen == 'true'
         shell: bash
         run: |
-          cp "dist/HATS Builder.exe" "dist/HATS-Builder-${GITHUB_REF_NAME}-Portable.exe"
-          cp "dist/HATS Builder Setup.exe" "dist/HATS-Builder-${GITHUB_REF_NAME}-Setup.exe"
+          cp "dist/HATS Builder.exe" "dist/HATS-Builder-${TAG}-Portable.exe"
+          cp "dist/HATS Builder Setup.exe" "dist/HATS-Builder-${TAG}-Setup.exe"
 
+      # Beim main-Push gibt es den Tag noch nicht. gh release create legt ihn
+      # dann selbst auf genau dem gebauten Commit an (--target). Ein Tag, den
+      # der Workflow so mit seinem eigenen Token anlegt, startet keinen
+      # weiteren Lauf, es wird also nicht doppelt gebaut.
       - name: Release anlegen
-        if: github.ref_type == 'tag'
+        if: needs.pruefen.outputs.veroeffentlichen == 'true'
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          files=("dist/HATS-Builder-${GITHUB_REF_NAME}-Portable.exe" \
-                 "dist/HATS-Builder-${GITHUB_REF_NAME}-Setup.exe")
-          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
-            gh release upload "$GITHUB_REF_NAME" "${files[@]}" --clobber
+          files=("dist/HATS-Builder-${TAG}-Portable.exe" \
+                 "dist/HATS-Builder-${TAG}-Setup.exe")
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" "${files[@]}" --clobber
           else
-            gh release create "$GITHUB_REF_NAME" "${files[@]}" \
-              --title "HATS Builder ${GITHUB_REF_NAME#v}" \
+            gh release create "$TAG" "${files[@]}" \
+              --target "$GITHUB_SHA" \
+              --title "HATS Builder ${TAG#v}" \
               --notes-file .github/release-notes.md --latest
           fi
