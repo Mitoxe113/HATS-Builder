@@ -11,6 +11,9 @@ name: Release
 on:
   push:
     tags: ['v*.*.*']
+  # Von Hand gestartet wird nur gebaut, nichts veroeffentlicht. Zum Pruefen,
+  # ob der Build auf GitHub noch durchlaeuft.
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -30,6 +33,7 @@ jobs:
       # veroeffentlichen, die sich selbst fuer eine andere Version haelt. Dann
       # meldet der Updater endlos ein Update oder gar keins.
       - name: Tag gegen package.json pruefen
+        if: github.ref_type == 'tag'
         shell: bash
         run: |
           v=$(node -p "require('./package.json').version")
@@ -48,12 +52,14 @@ jobs:
       # Der Updater erkennt die Bauart an der Endung -Portable.exe bzw.
       # -Setup.exe, deshalb kommen nur diese Namen ins Release.
       - name: Versionierte Kopien
+        if: github.ref_type == 'tag'
         shell: bash
         run: |
           cp "dist/HATS Builder.exe" "dist/HATS-Builder-${GITHUB_REF_NAME}-Portable.exe"
           cp "dist/HATS Builder Setup.exe" "dist/HATS-Builder-${GITHUB_REF_NAME}-Setup.exe"
 
       - name: Release anlegen
+        if: github.ref_type == 'tag'
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
