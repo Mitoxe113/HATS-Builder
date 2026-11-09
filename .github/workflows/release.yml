@@ -44,7 +44,9 @@ jobs:
 
       - run: npm ci
       - run: npm test
-      - run: npm run dist
+      # electron-builder erkennt CI und will dann selbst veroeffentlichen. Das
+      # macht der Schritt "Release anlegen", deshalb hier ausdruecklich nicht.
+      - run: npm run dist -- --publish never
         env:
           # Ohne Zertifikat nicht nach einer Signatur suchen lassen.
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'
