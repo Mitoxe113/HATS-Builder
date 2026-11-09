@@ -1,0 +1,69 @@
+# Baut die Windows-EXEs und veroeffentlicht das Release, sobald ein Tag vX.Y.Z
+# gepusht wird. Gedacht fuer die woechentliche Cloud-Pruefung, die auf Linux
+# laeuft und deshalb selbst keine Windows-Dateien bauen kann. Funktioniert
+# genauso, wenn der Tag von Hand gepusht wird.
+#
+# Die Release-Notes stehen in .github/release-notes.md und werden vor dem
+# Taggen fuer genau diese Version neu geschrieben.
+
+name: Release
+
+on:
+  push:
+    tags: ['v*.*.*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      # Ein Tag, der nicht zur Version in package.json passt, wuerde eine EXE
+      # veroeffentlichen, die sich selbst fuer eine andere Version haelt. Dann
+      # meldet der Updater endlos ein Update oder gar keins.
+      - name: Tag gegen package.json pruefen
+        shell: bash
+        run: |
+          v=$(node -p "require('./package.json').version")
+          if [ "v$v" != "$GITHUB_REF_NAME" ]; then
+            echo "Tag $GITHUB_REF_NAME passt nicht zu package.json ($v)"; exit 1
+          fi
+          test -s .github/release-notes.md || { echo "release-notes.md fehlt oder ist leer"; exit 1; }
+
+      - run: npm ci
+      - run: npm test
+      - run: npm run dist
+        env:
+          # Ohne Zertifikat nicht nach einer Signatur suchen lassen.
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+
+      # Der Updater erkennt die Bauart an der Endung -Portable.exe bzw.
+      # -Setup.exe, deshalb kommen nur diese Namen ins Release.
+      - name: Versionierte Kopien
+        shell: bash
+        run: |
+          cp "dist/HATS Builder.exe" "dist/HATS-Builder-${GITHUB_REF_NAME}-Portable.exe"
+          cp "dist/HATS Builder Setup.exe" "dist/HATS-Builder-${GITHUB_REF_NAME}-Setup.exe"
+
+      - name: Release anlegen
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          files=("dist/HATS-Builder-${GITHUB_REF_NAME}-Portable.exe" \
+                 "dist/HATS-Builder-${GITHUB_REF_NAME}-Setup.exe")
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" "${files[@]}" --clobber
+          else
+            gh release create "$GITHUB_REF_NAME" "${files[@]}" \
+              --title "HATS Builder ${GITHUB_REF_NAME#v}" \
+              --notes-file .github/release-notes.md --latest
+          fi
