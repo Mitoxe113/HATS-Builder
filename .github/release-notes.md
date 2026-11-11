@@ -1,14 +1,14 @@
 ## Deutsch
 
-**Das Update der portablen Fassung klappt jetzt auch mit Umlauten im Benutzernamen.** Heißt dein Windows-Konto zum Beispiel Jürgen oder Björn, hat sich die portable EXE bisher nicht selbst aktualisieren können und nur gemeldet, dass das Update nicht gestartet werden konnte. Schuld war das kleine Hilfsskript, das die EXE austauscht: Windows PowerShell hat es mit der falschen Zeichenkodierung gelesen und den Umlaut im Pfad zerstückelt. Jetzt trägt das Skript eine eindeutige Kennung, und der Pfad kommt unverändert an. Weil die laufende Version das neue Skript noch nicht kennt, musst du dieses eine Update eventuell noch von Hand herunterladen.
+**Neu unter Tools & Extras: HWTest RCM.** Ein Diagnose-Payload für die Reparatur von [Creased/HWTest-RCM](https://github.com/Creased/HWTest-RCM). Er prüft Akku, RAM, WLAN, Touch, den Gamecard-Slot und vieles mehr und erklärt die Ergebnisse in einer übersichtlichen Oberfläche. Du startest ihn wie die Picofly Toolbox über Hekate unter Payloads. Mit dabei ist auch ein eigener RAM-Test für den Verdacht auf defekten Speicher.
 
-**Sphaira und Themezer-NX kommen von ihrem neuen Zuhause.** Beide Projekte wurden von ihren Entwicklern in ein anderes Konto übertragen, Sphaira zu NaGaa95 und Themezer-NX in die Themezer-Organisation. GitHub leitet die alten Adressen zwar noch weiter, aber nur so lange, bis dort jemand ein neues Repository mit demselben Namen anlegt. Deshalb lädt die App jetzt direkt von den neuen Adressen. Alle anderen Komponenten habe ich gegen ihr aktuelles Release geprüft, sie passen.
+**Bitte nur zur Fehlersuche verwenden.** Die Diagnose spricht die Hardware aktiv an und schaltet dabei zum Beispiel Spannungen und Funkmodule um. Deshalb ist HWTest RCM standardmäßig aus, und du wählst es nur dann dazu, wenn du eine Konsole wirklich untersuchen willst.
 
 ## English
 
-**Updating the portable version now works with special characters in your user name.** If your Windows account is called something like Jürgen or Björn, the portable EXE could not update itself and only reported that the update could not be started. The culprit was the small helper script that swaps the EXE: Windows PowerShell read it with the wrong character encoding and mangled the umlaut in the path. The script now carries a clear marker, and the path arrives intact. Because your current version does not know the new script yet, you may have to download this one update by hand.
+**New under Tools & Extras: HWTest RCM.** A diagnostic payload for repairs from [Creased/HWTest-RCM](https://github.com/Creased/HWTest-RCM). It checks the battery, RAM, Wi-Fi, touch, the gamecard slot and a lot more, and explains the results in a clear interface. You launch it just like the Picofly Toolbox, from Hekate under Payloads. It also comes with a dedicated RAM test for when you suspect faulty memory.
 
-**Sphaira and Themezer-NX now come from their new home.** Their developers moved both projects to a different account, Sphaira to NaGaa95 and Themezer-NX to the Themezer organisation. GitHub still redirects the old addresses, but only until someone creates a new repository under the same name. That is why the app now downloads straight from the new addresses. I checked every other component against its current release, they all match.
+**Please only use it for troubleshooting.** The diagnostics actively drive the hardware and switch things like power rails and radio modules along the way. That is why HWTest RCM is off by default, and you only add it when you really want to examine a console.
 
 ---
 
