@@ -432,6 +432,23 @@ const COMPONENTS = [
     ],
   },
   {
+    id: 'hwtest',
+    name: 'HWTest RCM',
+    repo: 'Creased/HWTest-RCM',
+    category: 'tools',
+    description: {
+      de: 'Hardware-Diagnose für die Reparatur: prüft Akku, RAM, WLAN, Touch, Gamecard-Slot und mehr und erklärt die Ergebnisse verständlich. Wird über Hekate → Payloads gestartet. Die Tests sprechen die Hardware aktiv an, also nur zur Fehlersuche verwenden.',
+      en: 'Hardware diagnostics for repairs: checks battery, RAM, Wi-Fi, touch, the gamecard slot and more, and explains the results in plain words. Launched via Hekate → Payloads. The tests actively drive the hardware, so only use it for troubleshooting.',
+    },
+    // Das SD-Paket liegt schon im richtigen Aufbau vor: beide Payloads in
+    // bootloader/payloads und die Oberfläche in hwtest/. Ohne den Ordner
+    // hwtest/ startet nur das schlichte Tastenmenü statt der GUI, deshalb das
+    // ganze Paket statt nur der hwtest.bin.
+    assets: [
+      { match: /^hwtest-sd\.zip$/i, action: 'extract', target: '' },
+    ],
+  },
+  {
     id: 'hatstools',
     name: 'HATS-Tools',
     repo: 'sthetix/HATS-Tools',
