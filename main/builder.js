@@ -8,6 +8,7 @@ const github = require('./github');
 const { generateIni, normalize } = require('./hekate');
 const { NINTENDO_BLOCK } = require('./hosts');
 const { mt } = require('./messages');
+const { schreibeInDatei } = require('./stream');
 
 // Marker-Datei: kennzeichnet einen von uns erstellten Pack-Ordner.
 // Nur Ordner mit dieser Datei (oder leere Ordner) werden beim Neu-Bauen geleert.
@@ -81,29 +82,17 @@ async function ladeEinmal(component, asset, tmp, emit, signal) {
   }
 
   const total = Number(res.headers.get('content-length')) || asset.size || 0;
-  const file = fs.createWriteStream(tmp);
   let done = 0;
   let lastEmit = 0;
 
-  try {
-    for await (const chunk of res.body) {
-      // Backpressure beachten: bei vollem Puffer auf 'drain' warten, sonst
-      // würde eine große Datei komplett im RAM landen
-      if (!file.write(chunk)) {
-        await new Promise((resolve) => file.once('drain', resolve));
-      }
-      done += chunk.length;
-      const now = Date.now();
-      if (now - lastEmit > 100) {
-        lastEmit = now;
-        emit({ type: 'asset-progress', component: component.id, asset: asset.name, done, total });
-      }
+  await schreibeInDatei(res.body, tmp, (laenge) => {
+    done += laenge;
+    const now = Date.now();
+    if (now - lastEmit > 100) {
+      lastEmit = now;
+      emit({ type: 'asset-progress', component: component.id, asset: asset.name, done, total });
     }
-    await new Promise((resolve, reject) => file.end((err) => (err ? reject(err) : resolve())));
-  } catch (err) {
-    file.destroy();
-    throw err;
-  }
+  });
 }
 
 async function downloadAsset(component, release, asset, emit, signal) {
@@ -139,7 +128,13 @@ async function downloadAsset(component, release, asset, emit, signal) {
       pruneAlteVersionen(component.id, tagOrdner);
       return dest;
     } catch (err) {
-      fs.rmSync(tmp, { force: true });
+      // Das Aufräumen darf den eigentlichen Fehler nicht verdecken. Sonst sähe
+      // der Nutzer eine Meldung über die .part-Datei statt über den Grund.
+      try {
+        fs.rmSync(tmp, { force: true });
+      } catch {
+        /* bleibt liegen, der nächste Versuch überschreibt sie */
+      }
       // Abbruch des Nutzers und klare Absagen des Servers nicht wiederholen
       if ((signal && signal.aborted) || err.dauerhaft) throw err;
       letzterFehler = err;

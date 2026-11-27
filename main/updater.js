@@ -10,6 +10,7 @@ const path = require('path');
 const { spawn } = require('child_process');
 const github = require('./github');
 const { mt } = require('./messages');
+const { schreibeInDatei } = require('./stream');
 
 // Repo, aus dem die App ihre eigenen Updates bezieht.
 const REPO = 'Mitoxe113/HATS-Builder';
@@ -66,29 +67,26 @@ async function download(asset, targetDir, emit) {
   }
 
   const total = Number(res.headers.get('content-length')) || asset.size || 0;
-  const file = fs.createWriteStream(tmp);
   let done = 0;
   let lastEmit = 0;
 
   try {
-    for await (const chunk of res.body) {
-      // Backpressure beachten, sonst landet die ganze Datei im RAM
-      if (!file.write(chunk)) {
-        await new Promise((resolve) => file.once('drain', resolve));
-      }
-      done += chunk.length;
+    await schreibeInDatei(res.body, tmp, (laenge) => {
+      done += laenge;
       const now = Date.now();
       if (now - lastEmit > 150) {
         lastEmit = now;
         emit({ type: 'update-progress', done, total });
       }
-    }
-    await new Promise((resolve, reject) => file.end((err) => (err ? reject(err) : resolve())));
+    });
     fs.rmSync(dest, { force: true });
     fs.renameSync(tmp, dest);
   } catch (err) {
-    file.destroy();
-    fs.rmSync(tmp, { force: true });
+    try {
+      fs.rmSync(tmp, { force: true });
+    } catch {
+      /* Aufräumen ist Kür, der eigentliche Fehler zählt */
+    }
     throw err;
   }
 

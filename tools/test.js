@@ -477,6 +477,49 @@ async function downloadPruefungen() {
     pruefe('nach drei vergeblichen Versuchen wird aufgegeben', aufgegeben && versuche === 3, `${versuche} Versuche`);
     pruefe('keine halbe Datei bleibt liegen',
       !fs.existsSync(path.join(wurzel, 'download-cache', 'offline', 'v1', 'x.bin.part')));
+
+    // Ein Schreibfehler auf der Platte (voll, gesperrt) muss als normaler
+    // Fehler ankommen. Früher ging er als unbehandeltes 'error'-Ereignis des
+    // WriteStreams durch und hat den ganzen Prozess beendet. Hier erzwungen
+    // über einen Ordner an der Stelle der .part-Datei.
+    abschnitt('Schreibfehler beim Download');
+    fs.mkdirSync(path.join(wurzel, 'download-cache', 'platte', 'v1', 'y.bin.part'), { recursive: true });
+    versuche = 0;
+    global.fetch = async () => {
+      versuche += 1;
+      return antwort('inhalt');
+    };
+    let schreibFehler = null;
+    try {
+      await builder.downloadAsset(
+        { id: 'platte' },
+        { tag: 'v1' },
+        { name: 'y.bin', size: 0, url: 'https://example.invalid/y.bin' },
+        () => {},
+        null
+      );
+    } catch (e) {
+      schreibFehler = e;
+    }
+    pruefe('der Schreibfehler wird gemeldet statt abzustürzen',
+      schreibFehler && schreibFehler.code === 'EISDIR', schreibFehler && (schreibFehler.code || schreibFehler.message));
+    pruefe('ein Plattenfehler wird nicht wiederholt', versuche === 1, `${versuche} Versuche`);
+
+    const updater = require(path.join(WURZEL, 'main/updater.js'));
+    const updateZiel = path.join(wurzel, 'update');
+    fs.mkdirSync(path.join(updateZiel, 'HATS-Builder-Portable.exe.part'), { recursive: true });
+    let updateFehler = null;
+    try {
+      await updater.download(
+        { name: 'HATS-Builder-Portable.exe', size: 0, url: 'https://github.com/x/y/releases/download/v1/a.exe' },
+        updateZiel,
+        () => {}
+      );
+    } catch (e) {
+      updateFehler = e;
+    }
+    pruefe('auch beim App-Update kommt der Schreibfehler normal an',
+      updateFehler && updateFehler.code === 'EISDIR', updateFehler && (updateFehler.code || updateFehler.message));
   } finally {
     global.fetch = echtesFetch;
     fs.rmSync(wurzel, { recursive: true, force: true });
